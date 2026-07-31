@@ -395,18 +395,18 @@ where
         self.timer.is_finished()
     }
 
-    pub fn schedule_seek_elapsed(&mut self, to: Duration) {
+    pub fn schedule_seek_elapsed(&mut self, time: Duration) {
         let from = self
             .seek_from_to_unchecked
             .last()
             .map(|(_, to)| *to)
             .unwrap_or_else(|| self.elapsed_as_if_forward());
 
-        if from == to {
+        if from == time {
             return;
         }
 
-        self.seek_from_to_unchecked.push((from, to));
+        self.seek_from_to_unchecked.push((from, time));
     }
 
     pub fn schedule_seek_elapsed_secs(&mut self, secs: f64) {
