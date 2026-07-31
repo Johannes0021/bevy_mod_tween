@@ -584,15 +584,13 @@ where
         let after_tick_forward = self.elapsed_as_if_forward();
 
         if times_finished_this_tick > 0 {
-            if !after_tick_forward.is_zero() {
-                self.seek_from_to(
-                    Duration::ZERO,
-                    after_tick_forward,
-                    targets,
-                    target_options,
-                    commands,
-                );
-            }
+            self.seek_from_to(
+                Duration::ZERO,
+                after_tick_forward,
+                targets,
+                target_options,
+                commands,
+            );
         } else {
             if before_tick_forward <= after_tick_forward {
                 self.seek_from_to(
@@ -639,9 +637,7 @@ where
             self.seek_from_to(from, to, targets, target_options, commands);
         } else {
             self.seek_from_to(from, self.duration(), targets, target_options, commands);
-            if !to.is_zero() {
-                self.seek_from_to(Duration::ZERO, to, targets, target_options, commands);
-            }
+            self.seek_from_to(Duration::ZERO, to, targets, target_options, commands);
         }
     }
 
