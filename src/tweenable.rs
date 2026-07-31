@@ -1,3 +1,4 @@
+use bevy_asset::{Asset, Handle};
 use bevy_color::{Color, Mix};
 use bevy_math::{DVec2, DVec3, DVec4, FloatExt, IVec2, IVec3, IVec4, Rect, Vec2, Vec3, Vec4};
 use bevy_transform::components::Transform;
@@ -187,6 +188,15 @@ impl Tweenable for Val {
             (this, _) if t < 0.5 => *this,
             (_, other) => *other,
         }
+    }
+}
+
+impl<T> Tweenable for Handle<T>
+where
+    T: Asset,
+{
+    fn tween(&self, other: &Self, t: f32) -> Self {
+        if t < 0.5 { self.clone() } else { other.clone() }
     }
 }
 
