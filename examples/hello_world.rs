@@ -20,8 +20,11 @@ fn setup(mut commands: Commands) {
             ..default()
         },
         // See also TweenController
-
+        //
+        // This example does not show all features. See the code for more details.
+        //
         // target: Transform, property: Vec3, marker: TweenUpdate<()>,
+        // There are also wrappers that implement Tweenable like TweenStep and TweenStepAt.
         Tween::<Transform, Vec3, TweenUpdate>::with_set(|t, p| t.translation = p)
             .extend([
                 TweenKey::new(Vec3::new(-120.0, -120.0, 0.0))

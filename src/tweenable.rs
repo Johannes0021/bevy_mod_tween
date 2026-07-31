@@ -189,3 +189,44 @@ impl Tweenable for Val {
         }
     }
 }
+
+//==================================================================================================
+// TweenStep
+//==================================================================================================
+
+#[derive(Clone)]
+pub struct TweenStep<T>(pub T)
+where
+    T: Clone;
+
+impl<T> Tweenable for TweenStep<T>
+where
+    T: Send + Sync + Clone,
+{
+    fn tween(&self, other: &Self, t: f32) -> Self {
+        if t < 0.5 { self.clone() } else { other.clone() }
+    }
+}
+
+//==================================================================================================
+// TweenStepAt
+//==================================================================================================
+
+#[derive(Clone)]
+pub struct TweenStepAt<T> {
+    pub value: T,
+    pub at: f32,
+}
+
+impl<T> Tweenable for TweenStepAt<T>
+where
+    T: Send + Sync + Clone,
+{
+    fn tween(&self, other: &Self, t: f32) -> Self {
+        if t < self.at {
+            self.clone()
+        } else {
+            other.clone()
+        }
+    }
+}

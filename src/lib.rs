@@ -37,7 +37,7 @@ pub mod prelude {
         marker::{TweenFixedUpdate, TweenMarker, TweenSchedule, TweenUpdate},
         property::TweenPropertySet,
         target::{TweenKeyTarget, TweenTarget},
-        tweenable::Tweenable,
+        tweenable::{TweenStep, TweenStepAt, Tweenable},
     };
 }
 
