@@ -32,7 +32,9 @@ fn setup(mut commands: Commands) {
                 TweenKey::delay_secs(0.5)
                     .at(TweenFnAt::Start, |_| info!("3"))
                     .at(TweenFnAt::End, |_| info!("4")),
-                TweenKey::new(Vec3::new(120.0, 120.0, 0.0)).duration_secs(2.0),
+                TweenKey::new(Vec3::new(120.0, 120.0, 0.0))
+                    .duration_secs(2.0)
+                    .ease_fn(EaseFunction::Elastic(21.0)),
                 TweenKey::new(Vec3::new(120.0, -120.0, 0.0)).duration_secs(1.0),
                 TweenKey::new(Vec3::new(-120.0, 120.0, 0.0)).duration_secs(2.0),
                 TweenKey::new(Vec3::new(-120.0, -120.0, 0.0)).duration_secs(1.0),
