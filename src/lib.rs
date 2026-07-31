@@ -396,7 +396,7 @@ where
     }
 
     pub fn schedule_seek_elapsed(&mut self, time: Duration) {
-        let elapsed_forward = self.elapsed_forward();
+        let elapsed_forward = self.elapsed_as_if_forward();
 
         if elapsed_forward == time && self.seek_from_to_unchecked.is_empty() {
             return;
@@ -432,7 +432,7 @@ where
         elapsed.min(self.duration())
     }
 
-    fn elapsed_forward(&self) -> Duration {
+    fn elapsed_as_if_forward(&self) -> Duration {
         let elapsed = self.elapsed();
 
         if self.plays_forward() {
@@ -505,7 +505,7 @@ where
     ) {
         // Fix state
         {
-            let before_tick_forward = self.elapsed_forward();
+            let before_tick_forward = self.elapsed_as_if_forward();
 
             if self.last_update_elapsed_forward != before_tick_forward {
                 self.wrapping_seek_from_to(
@@ -526,11 +526,11 @@ where
 
         // Update
         if self.is_paused() {
-            self.last_update_elapsed_forward = self.elapsed_forward();
+            self.last_update_elapsed_forward = self.elapsed_as_if_forward();
             return;
         }
 
-        let before_tick_forward = self.elapsed_forward();
+        let before_tick_forward = self.elapsed_as_if_forward();
 
         if self.time_scale.abs() == 1.0 {
             self.timer.tick(delta);
@@ -541,7 +541,7 @@ where
         let times_finished_this_tick: u32 = self.timer.times_finished_this_tick();
 
         if times_finished_this_tick == 0 && self.timer.is_finished() {
-            self.last_update_elapsed_forward = self.elapsed_forward();
+            self.last_update_elapsed_forward = self.elapsed_as_if_forward();
             return;
         }
 
@@ -565,7 +565,7 @@ where
             );
         }
 
-        let after_tick_forward = self.elapsed_forward();
+        let after_tick_forward = self.elapsed_as_if_forward();
 
         if times_finished_this_tick > 0 {
             if !after_tick_forward.is_zero() {
