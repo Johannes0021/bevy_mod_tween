@@ -418,6 +418,14 @@ where
     }
 
     pub fn elapsed(&self) -> Duration {
+        let fraction: f32 = self.fraction();
+
+        if fraction == 0.0 {
+            return Duration::ZERO;
+        } else if fraction == 1.0 {
+            return self.duration();
+        }
+
         let elapsed = if self.ease_fn == EaseFunction::Linear {
             if self.plays_forward() {
                 self.timer.elapsed()
@@ -425,7 +433,6 @@ where
                 self.timer.remaining()
             }
         } else {
-            let fraction: f32 = self.fraction();
             Duration::from_secs_f64(self.duration_secs() * fraction as f64)
         };
 
@@ -475,7 +482,16 @@ where
     }
 
     pub fn fraction(&self) -> f32 {
-        let fraction = if self.plays_forward() {
+        let plays_forward = self.plays_forward();
+
+        let elapsed = self.timer.elapsed();
+        if elapsed.is_zero() {
+            return if plays_forward { 0.0 } else { 1.0 };
+        } else if elapsed == self.duration() {
+            return if plays_forward { 1.0 } else { 0.0 };
+        }
+
+        let fraction = if plays_forward {
             self.timer.fraction()
         } else {
             self.timer.fraction_remaining()
