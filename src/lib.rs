@@ -28,7 +28,7 @@ use std::{any::TypeId, collections::HashMap, marker::PhantomData, mem, time::Dur
 
 pub mod prelude {
     pub use super::{
-        Tween, TweenEase, TweenEaseKey, TweenFinished, TweenPlugin, TweenSystems,
+        Tween, TweenEase, TweenEaseKey, TweenEaseSample, TweenFinished, TweenPlugin, TweenSystems,
         controller::TweenController,
         function::{
             MinimalTweenFnAt, TweenContext, TweenFn, TweenFnAt, TweenKeyContext, TweenKeyFn,
@@ -532,7 +532,7 @@ where
             self.timer.remaining()
         };
 
-        self.ease.sample_clamped(TweenSample {
+        self.ease.sample_clamped(TweenEaseSample {
             linear_elapsed,
             total_duration,
         })
@@ -853,10 +853,10 @@ impl TweenEase {
 
     pub fn sample_clamped(
         &self,
-        TweenSample {
+        TweenEaseSample {
             linear_elapsed,
             total_duration,
-        }: TweenSample,
+        }: TweenEaseSample,
     ) -> f32 {
         if linear_elapsed.is_zero() {
             return 0.0;
@@ -906,10 +906,10 @@ impl TweenEase {
 }
 
 //==================================================================================================
-// TweenSample
+// TweenEaseSample
 //==================================================================================================
 
-pub struct TweenSample {
+pub struct TweenEaseSample {
     pub linear_elapsed: Duration,
     pub total_duration: Duration,
 }
