@@ -438,9 +438,7 @@ where
 
         const MIN_ELAPSED: Duration = Duration::from_micros(100); // 1e-4s
 
-        elapsed
-            .max(MIN_ELAPSED)
-            .min(self.duration())
+        elapsed.max(MIN_ELAPSED).min(self.duration())
     }
 
     fn elapsed_as_if_forward(&self) -> Duration {

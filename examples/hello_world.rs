@@ -50,20 +50,20 @@ fn setup(mut commands: Commands) {
             .repeating()
             .ping_pong(),
         // target: Sprite, property: f32, marker: TweenUpdate<SpriteColorG>,
-        //        Tween::<Sprite, f32, TweenUpdate<SpriteColorG>>::with_set(|t, p| {
-        //            t.color = Color::srgb(0.0, p, 0.0)
-        //        })
-        //        .extend([
-        //            TweenKey::new(0.0).duration_secs(1.0),
-        //            TweenKey::new(1.0),
-        //            TweenKey::delay_secs(0.5),
-        //            TweenKey::new(1.0).duration_secs(2.0),
-        //            TweenKey::new(0.0).duration_secs(1.0),
-        //            TweenKey::new(1.0).duration_secs(2.0),
-        //            TweenKey::new(0.0).duration_secs(1.0),
-        //            TweenKey::delay_secs(2.0),
-        //        ])
-        //        .repeating()
-        //        .ping_pong(),
+        Tween::<Sprite, f32, TweenUpdate<SpriteColorG>>::with_set(|t, p| {
+            t.color = Color::srgb(0.0, p, 0.0)
+        })
+        .extend([
+            TweenKey::new(0.0).duration_secs(1.0),
+            TweenKey::new(1.0),
+            TweenKey::delay_secs(0.5),
+            TweenKey::new(1.0).duration_secs(2.0),
+            TweenKey::new(0.0).duration_secs(1.0),
+            TweenKey::new(1.0).duration_secs(2.0),
+            TweenKey::new(0.0).duration_secs(1.0),
+            TweenKey::delay_secs(2.0),
+        ])
+        .repeating()
+        .ping_pong(),
     ));
 }
