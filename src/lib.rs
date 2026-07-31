@@ -28,7 +28,7 @@ use std::{any::TypeId, collections::HashMap, marker::PhantomData, mem, time::Dur
 
 pub mod prelude {
     pub use super::{
-        Tween, TweenFinished, TweenPlugin, TweenSystems,
+        Tween, TweenEase, TweenEaseKey, TweenFinished, TweenPlugin, TweenSystems,
         controller::TweenController,
         function::{
             MinimalTweenFnAt, TweenContext, TweenFn, TweenFnAt, TweenKeyContext, TweenKeyFn,
@@ -181,7 +181,7 @@ where
     cycles: usize,
     tween_fns: Vec<(TweenFnAt, TweenFn<T, P, M>)>,
     pub target: TweenTarget,
-    pub ease_fn: EaseFunction,
+    pub ease: TweenEase,
     pub ping_pong: bool,
 }
 
@@ -263,7 +263,7 @@ where
             cycles: 0,
             tween_fns: Default::default(),
             target: TweenTarget::This,
-            ease_fn: EaseFunction::Linear,
+            ease: Default::default(),
             ping_pong: false,
         }
     }
@@ -346,9 +346,20 @@ where
         self
     }
 
-    pub fn ease_fn(mut self, ease_fn: EaseFunction) -> Self {
-        self.ease_fn = ease_fn;
+    pub fn ease(mut self, ease: TweenEase) -> Self {
+        self.ease = ease;
         self
+    }
+
+    pub fn ease_single(self, ease_fn: EaseFunction) -> Self {
+        self.ease(TweenEase::Single(ease_fn))
+    }
+
+    pub fn ease_timeline<I>(self, keys: I) -> Self
+    where
+        I: IntoIterator<Item = TweenEaseKey>,
+    {
+        self.ease(TweenEase::Timeline(keys.into_iter().collect()))
     }
 
     pub fn repeating(mut self) -> Self {
@@ -422,21 +433,36 @@ where
     }
 
     pub fn elapsed(&self) -> Duration {
-        let fraction: f32 = self.fraction();
+        let plays_forward = self.plays_forward();
+        let total_duration = self.duration();
+        let timer_elapsed = self.timer.elapsed();
 
-        if fraction == 0.0 {
-            return Duration::ZERO;
-        } else if fraction == 1.0 {
-            return self.duration();
+        if timer_elapsed.is_zero() {
+            if plays_forward {
+                return Duration::ZERO;
+            } else {
+                return total_duration;
+            }
         }
 
-        let elapsed = if self.ease_fn == EaseFunction::Linear {
-            if self.plays_forward() {
-                self.timer.elapsed()
+        if timer_elapsed == total_duration {
+            if plays_forward {
+                return total_duration;
             } else {
-                self.timer.remaining()
+                return Duration::ZERO;
             }
+        }
+
+        let linear_elapsed = if self.plays_forward() {
+            self.timer.elapsed()
         } else {
+            self.timer.remaining()
+        };
+
+        let elapsed = if self.ease.is(EaseFunction::Linear, linear_elapsed) {
+            linear_elapsed
+        } else {
+            let fraction: f32 = self.fraction();
             Duration::from_secs_f64(self.duration_secs() * fraction as f64)
         };
 
@@ -489,21 +515,27 @@ where
 
     pub fn fraction(&self) -> f32 {
         let plays_forward = self.plays_forward();
+        let total_duration = self.duration();
+        let timer_elapsed = self.timer.elapsed();
 
-        let elapsed = self.timer.elapsed();
-        if elapsed.is_zero() {
+        if timer_elapsed.is_zero() {
             return if plays_forward { 0.0 } else { 1.0 };
-        } else if elapsed == self.duration() {
+        }
+
+        if timer_elapsed == total_duration {
             return if plays_forward { 1.0 } else { 0.0 };
         }
 
-        let fraction = if plays_forward {
-            self.timer.fraction()
+        let linear_elapsed = if self.plays_forward() {
+            timer_elapsed
         } else {
-            self.timer.fraction_remaining()
+            self.timer.remaining()
         };
 
-        self.ease_fn.sample_clamped(fraction)
+        self.ease.sample_clamped(TweenSample {
+            linear_elapsed,
+            total_duration,
+        })
     }
 
     pub fn fraction_remaining(&self) -> f32 {
@@ -773,5 +805,131 @@ where
                 played_forward,
             });
         }
+    }
+}
+
+//==================================================================================================
+// TweenEase
+//==================================================================================================
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TweenEase {
+    Single(EaseFunction),
+    Timeline(Vec<TweenEaseKey>),
+}
+
+impl Default for TweenEase {
+    fn default() -> Self {
+        Self::Single(EaseFunction::Linear)
+    }
+}
+
+impl TweenEase {
+    pub fn get(&self, time: Duration) -> EaseFunction {
+        match self {
+            Self::Single(ease) => *ease,
+
+            Self::Timeline(keys) => {
+                let mut elapsed = Duration::ZERO;
+
+                for key in keys {
+                    elapsed += key.duration;
+
+                    if time < elapsed {
+                        return key.ease_fn;
+                    }
+                }
+
+                keys.last()
+                    .map(|key| key.ease_fn)
+                    .unwrap_or(EaseFunction::Linear)
+            }
+        }
+    }
+
+    pub fn is(&self, ease: EaseFunction, time: Duration) -> bool {
+        ease == self.get(time)
+    }
+
+    pub fn sample_clamped(
+        &self,
+        TweenSample {
+            linear_elapsed,
+            total_duration,
+        }: TweenSample,
+    ) -> f32 {
+        if linear_elapsed.is_zero() {
+            return 0.0;
+        }
+
+        if linear_elapsed >= total_duration {
+            return 1.0;
+        }
+
+        debug_assert!(!total_duration.is_zero());
+
+        match self {
+            Self::Single(ease) => {
+                let t = linear_elapsed.as_secs_f64() / total_duration.as_secs_f64();
+                ease.sample_clamped(t as f32)
+            }
+
+            Self::Timeline(keys) => {
+                let mut elapsed = Duration::ZERO;
+
+                for key in keys {
+                    let segment_start = elapsed;
+                    let segment_end = elapsed + key.duration;
+
+                    if linear_elapsed < segment_end {
+                        debug_assert!(!key.duration.is_zero());
+
+                        let segment_t = linear_elapsed.saturating_sub(segment_start).as_secs_f64()
+                            / key.duration.as_secs_f64();
+
+                        let eased_t = key.ease_fn.sample_clamped(segment_t.clamp(0.0, 1.0) as f32);
+
+                        let start = segment_start.as_secs_f64() / total_duration.as_secs_f64();
+
+                        let end = segment_end.as_secs_f64() / total_duration.as_secs_f64();
+
+                        return (start + ((end - start) * eased_t as f64)) as f32;
+                    }
+
+                    elapsed = segment_end;
+                }
+
+                (linear_elapsed.as_secs_f64() / total_duration.as_secs_f64()) as f32
+            }
+        }
+    }
+}
+
+//==================================================================================================
+// TweenSample
+//==================================================================================================
+
+pub struct TweenSample {
+    pub linear_elapsed: Duration,
+    pub total_duration: Duration,
+}
+
+//==================================================================================================
+// TweenEaseKey
+//==================================================================================================
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct TweenEaseKey {
+    pub ease_fn: EaseFunction,
+    pub duration: Duration,
+}
+
+impl TweenEaseKey {
+    pub fn duration(ease_fn: EaseFunction, duration: Duration) -> Self {
+        Self { ease_fn, duration }
+    }
+
+    pub fn duration_secs(ease_fn: EaseFunction, secs: f64) -> Self {
+        Self::duration(ease_fn, Duration::from_secs_f64(secs))
     }
 }

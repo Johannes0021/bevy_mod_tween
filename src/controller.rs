@@ -1,4 +1,6 @@
-use super::{Tween, marker::TweenMarker, target::TweenTarget, tweenable::Tweenable};
+use super::{
+    Tween, TweenEase, TweenEaseKey, marker::TweenMarker, target::TweenTarget, tweenable::Tweenable,
+};
 use bevy_ecs::component::{Component, Mutable};
 use bevy_math::curve::EaseFunction;
 use bevy_time::TimerMode;
@@ -56,14 +58,37 @@ impl TweenController {
         self.actions.push(ScheduleTweenAction::Mode(mode));
     }
 
-    pub fn with_schedule_set_ease_fn(mut self, ease_fn: EaseFunction) -> Self {
-        self.schedule_set_ease_fn(ease_fn);
+    pub fn with_schedule_set_ease(mut self, ease: TweenEase) -> Self {
+        self.schedule_set_ease(ease);
         self
     }
 
-    pub fn schedule_set_ease_fn(&mut self, ease_fn: EaseFunction) {
-        self.actions
-            .push(ScheduleTweenAction::EaseFunction(ease_fn));
+    pub fn schedule_set_ease(&mut self, ease: TweenEase) {
+        self.actions.push(ScheduleTweenAction::Ease(ease));
+    }
+
+    pub fn with_schedule_set_ease_single(mut self, ease_fn: EaseFunction) -> Self {
+        self.schedule_set_ease_single(ease_fn);
+        self
+    }
+
+    pub fn schedule_set_ease_single(&mut self, ease_fn: EaseFunction) {
+        self.schedule_set_ease(TweenEase::Single(ease_fn));
+    }
+
+    pub fn with_schedule_set_ease_timeline<I>(mut self, keys: I) -> Self
+    where
+        I: IntoIterator<Item = TweenEaseKey>,
+    {
+        self.schedule_set_ease_timeline(keys);
+        self
+    }
+
+    pub fn schedule_set_ease_timeline<I>(&mut self, keys: I)
+    where
+        I: IntoIterator<Item = TweenEaseKey>,
+    {
+        self.schedule_set_ease(TweenEase::Timeline(keys.into_iter().collect()));
     }
 
     pub fn with_schedule_set_ping_pong(mut self, ping_pong: bool) -> Self {
@@ -160,8 +185,8 @@ impl TweenController {
                     tween.set_mode(*mode);
                 }
 
-                ScheduleTweenAction::EaseFunction(ease_fn) => {
-                    tween.ease_fn = *ease_fn;
+                ScheduleTweenAction::Ease(ease) => {
+                    tween.ease = ease.clone();
                 }
 
                 ScheduleTweenAction::PingPong(ping_pong) => {
@@ -195,7 +220,7 @@ enum ScheduleTweenAction {
     Reverse,
     Target(TweenTarget),
     Mode(TimerMode),
-    EaseFunction(EaseFunction),
+    Ease(TweenEase),
     PingPong(bool),
     Seek(ScheduleSeek),
     Timer(ScheduleTimer),

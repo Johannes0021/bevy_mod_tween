@@ -51,7 +51,7 @@ fn setup(mut commands: Commands) {
             .at(TweenFnAt::End, |_| {
                 info!("end ------------------------------------------------")
             })
-            .ease_fn(EaseFunction::QuinticIn)
+            .ease_single(EaseFunction::QuinticIn) // See also ease_timeline
             .repeating()
             .ping_pong(),
         // target: Sprite, property: f32, marker: TweenUpdate<SpriteColorG>,
