@@ -644,7 +644,7 @@ where
         let from = raw_from.min(total_duration);
         let to = raw_to.min(total_duration);
 
-        if to < from {
+        if to <= from {
             return;
         }
 
