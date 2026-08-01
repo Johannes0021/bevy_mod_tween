@@ -86,12 +86,12 @@ impl Plugin for TweenPlugin {
     }
 }
 
-fn run_update_tween_systems(world: &mut World) {
-    run_tween_systems(world, |registry| &mut registry.update_systems);
-}
-
 fn run_fixed_update_tween_systems(world: &mut World) {
     run_tween_systems(world, |registry| &mut registry.fixed_update_systems);
+}
+
+fn run_update_tween_systems(world: &mut World) {
+    run_tween_systems(world, |registry| &mut registry.update_systems);
 }
 
 fn run_init_added_tween_systems(world: &mut World) {
