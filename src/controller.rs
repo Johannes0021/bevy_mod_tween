@@ -8,7 +8,6 @@ use std::time::Duration;
 
 #[derive(Component, Debug, Default, Clone)]
 pub struct TweenController {
-    pub(super) read_by_tween: bool,
     actions: Vec<ScheduleTweenAction>,
 }
 
@@ -17,8 +16,8 @@ impl TweenController {
         Self::default()
     }
 
-    pub fn discard_pending_schedules(&mut self) {
-        *self = Self::default();
+    pub fn discard_pending_schedules_read_by_any_tween(&mut self) {
+        self.actions.retain(|a| !a.was_read_by_tween);
     }
 
     pub fn with_schedule_set_time_scale(mut self, time_scale: f64) -> Self {
@@ -28,7 +27,7 @@ impl TweenController {
 
     pub fn schedule_set_time_scale(&mut self, time_scale: f64) {
         self.actions
-            .push(ScheduleTweenAction::TimeScale(time_scale));
+            .push(ScheduleTweenAction::new(TweenAction::TimeScale(time_scale)));
     }
 
     pub fn with_schedule_set_pause_every_nth_cycle(mut self, cycle: usize) -> Self {
@@ -38,7 +37,9 @@ impl TweenController {
 
     pub fn schedule_set_pause_every_nth_cycle(&mut self, cycle: usize) {
         self.actions
-            .push(ScheduleTweenAction::PauseEveryNthCycle(cycle));
+            .push(ScheduleTweenAction::new(TweenAction::PauseEveryNthCycle(
+                cycle,
+            )));
     }
 
     pub fn with_schedule_set_reverse(mut self) -> Self {
@@ -47,7 +48,8 @@ impl TweenController {
     }
 
     pub fn schedule_set_reverse(&mut self) {
-        self.actions.push(ScheduleTweenAction::Reverse);
+        self.actions
+            .push(ScheduleTweenAction::new(TweenAction::Reverse));
     }
 
     pub fn with_schedule_set_target(mut self, target: TweenTarget) -> Self {
@@ -56,7 +58,8 @@ impl TweenController {
     }
 
     pub fn schedule_set_target(&mut self, target: TweenTarget) {
-        self.actions.push(ScheduleTweenAction::Target(target));
+        self.actions
+            .push(ScheduleTweenAction::new(TweenAction::Target(target)));
     }
 
     pub fn with_schedule_set_mode(mut self, mode: TimerMode) -> Self {
@@ -65,7 +68,8 @@ impl TweenController {
     }
 
     pub fn schedule_set_mode(&mut self, mode: TimerMode) {
-        self.actions.push(ScheduleTweenAction::Mode(mode));
+        self.actions
+            .push(ScheduleTweenAction::new(TweenAction::Mode(mode)));
     }
 
     pub fn with_schedule_set_ease(mut self, ease: TweenEase) -> Self {
@@ -74,7 +78,8 @@ impl TweenController {
     }
 
     pub fn schedule_set_ease(&mut self, ease: TweenEase) {
-        self.actions.push(ScheduleTweenAction::Ease(ease));
+        self.actions
+            .push(ScheduleTweenAction::new(TweenAction::Ease(ease)));
     }
 
     pub fn with_schedule_set_ease_single(mut self, ease_fn: EaseFunction) -> Self {
@@ -107,7 +112,8 @@ impl TweenController {
     }
 
     pub fn schedule_set_ping_pong(&mut self, ping_pong: bool) {
-        self.actions.push(ScheduleTweenAction::PingPong(ping_pong));
+        self.actions
+            .push(ScheduleTweenAction::new(TweenAction::PingPong(ping_pong)));
     }
 
     pub fn with_schedule_seek_elapsed(mut self, time: Duration) -> Self {
@@ -117,7 +123,9 @@ impl TweenController {
 
     pub fn schedule_seek_elapsed(&mut self, time: Duration) {
         self.actions
-            .push(ScheduleTweenAction::Seek(ScheduleSeek::Elapsed(time)));
+            .push(ScheduleTweenAction::new(TweenAction::Seek(
+                ScheduleSeek::Elapsed(time),
+            )));
     }
 
     pub fn with_schedule_seek_elapsed_secs(mut self, secs: f64) -> Self {
@@ -136,7 +144,9 @@ impl TweenController {
 
     pub fn schedule_finish(&mut self) {
         self.actions
-            .push(ScheduleTweenAction::Seek(ScheduleSeek::Finish));
+            .push(ScheduleTweenAction::new(TweenAction::Seek(
+                ScheduleSeek::Finish,
+            )));
     }
 
     pub fn with_schedule_reset(mut self) -> Self {
@@ -146,7 +156,9 @@ impl TweenController {
 
     pub fn schedule_reset(&mut self) {
         self.actions
-            .push(ScheduleTweenAction::Seek(ScheduleSeek::Reset));
+            .push(ScheduleTweenAction::new(TweenAction::Seek(
+                ScheduleSeek::Reset,
+            )));
     }
 
     pub fn with_schedule_pause(mut self) -> Self {
@@ -156,7 +168,9 @@ impl TweenController {
 
     pub fn schedule_pause(&mut self) {
         self.actions
-            .push(ScheduleTweenAction::Timer(ScheduleTimer::Pause));
+            .push(ScheduleTweenAction::new(TweenAction::Timer(
+                ScheduleTimer::Pause,
+            )));
     }
 
     pub fn with_schedule_unpause(mut self) -> Self {
@@ -166,7 +180,9 @@ impl TweenController {
 
     pub fn schedule_unpause(&mut self) {
         self.actions
-            .push(ScheduleTweenAction::Timer(ScheduleTimer::Unpause));
+            .push(ScheduleTweenAction::new(TweenAction::Timer(
+                ScheduleTimer::Unpause,
+            )));
     }
 
     pub(super) fn apply_to<T, P, M>(&mut self, tween: &mut Tween<T, P, M>)
@@ -175,39 +191,39 @@ impl TweenController {
         P: Tweenable + Send + Sync + 'static,
         M: TweenMarker + Send + Sync + 'static,
     {
-        self.read_by_tween = true;
+        for action in &mut self.actions {
+            action.was_read_by_tween = true;
 
-        for action in &self.actions {
-            match action {
-                ScheduleTweenAction::TimeScale(time_scale) => {
+            match &action.action {
+                TweenAction::TimeScale(time_scale) => {
                     tween.time_scale = *time_scale;
                 }
 
-                ScheduleTweenAction::PauseEveryNthCycle(cycle) => {
+                TweenAction::PauseEveryNthCycle(cycle) => {
                     tween.pause_every_nth_cycle = *cycle;
                 }
 
-                ScheduleTweenAction::Reverse => {
+                TweenAction::Reverse => {
                     tween.time_scale = -tween.time_scale;
                 }
 
-                ScheduleTweenAction::Target(target) => {
+                TweenAction::Target(target) => {
                     tween.target = *target;
                 }
 
-                ScheduleTweenAction::Mode(mode) => {
+                TweenAction::Mode(mode) => {
                     tween.set_mode(*mode);
                 }
 
-                ScheduleTweenAction::Ease(ease) => {
+                TweenAction::Ease(ease) => {
                     tween.ease = ease.clone();
                 }
 
-                ScheduleTweenAction::PingPong(ping_pong) => {
+                TweenAction::PingPong(ping_pong) => {
                     tween.ping_pong = *ping_pong;
                 }
 
-                ScheduleTweenAction::Seek(seek) => match seek {
+                TweenAction::Seek(seek) => match seek {
                     ScheduleSeek::Elapsed(duration) => {
                         tween.schedule_seek_elapsed(*duration);
                     }
@@ -219,7 +235,7 @@ impl TweenController {
                     }
                 },
 
-                ScheduleTweenAction::Timer(timer) => match timer {
+                TweenAction::Timer(timer) => match timer {
                     ScheduleTimer::Pause => tween.pause(),
                     ScheduleTimer::Unpause => tween.unpause(),
                 },
@@ -229,7 +245,22 @@ impl TweenController {
 }
 
 #[derive(Debug, Clone)]
-enum ScheduleTweenAction {
+struct ScheduleTweenAction {
+    was_read_by_tween: bool,
+    action: TweenAction,
+}
+
+impl ScheduleTweenAction {
+    pub fn new(action: TweenAction) -> Self {
+        Self {
+            was_read_by_tween: false,
+            action,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+enum TweenAction {
     TimeScale(f64),
     PauseEveryNthCycle(usize),
     Reverse,

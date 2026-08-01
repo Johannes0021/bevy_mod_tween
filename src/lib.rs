@@ -100,9 +100,7 @@ fn run_init_added_tween_systems(world: &mut World) {
 
 fn tween_controller_discard_pending_schedules(tween_controllers: Query<&mut TweenController>) {
     for mut tween_controller in tween_controllers {
-        if tween_controller.read_by_tween {
-            tween_controller.discard_pending_schedules();
-        }
+        tween_controller.discard_pending_schedules_read_by_any_tween();
     }
 }
 
@@ -117,8 +115,8 @@ fn run_tween_systems(
 
     systems.retain(|system_id| match world.run_system(*system_id) {
         Ok(()) => true,
-        Err(err) => {
-            warn!("Tween system failed and will be removed: {err:?}");
+        Err(e) => {
+            warn!("Tween system failed and will be removed: {e:?}");
             false
         }
     });
