@@ -194,7 +194,6 @@ where
     M: TweenMarker + Send + Sync + 'static,
 {
     let type_id = TypeId::of::<Tween<T, P, M>>();
-
     let mut registry = world.resource_mut::<TweenRegistry>();
 
     if registry.system_map.contains_key(&type_id) {
@@ -205,9 +204,10 @@ where
 
     world.commands().queue(move |world: &mut World| {
         let system_id = world.register_system(update_tweens::<T, P, M>);
-
         let mut registry = world.resource_mut::<TweenRegistry>();
+
         registry.system_map.insert(type_id, Some(system_id));
+
         match M::tween_schedule() {
             TweenSchedule::Update => {
                 registry.update_systems.push(system_id);
