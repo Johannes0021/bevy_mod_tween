@@ -179,6 +179,8 @@ where
     timer: Timer,
     pub time_scale: f64,
     cycles: usize,
+    /// Pause every Nth cycle. `0` disables cycle pauses.
+    pub pause_every_nth_cycle: usize,
     tween_fns: Vec<(TweenFnAt, TweenFn<T, P, M>)>,
     pub target: TweenTarget,
     pub ease: TweenEase,
@@ -261,6 +263,7 @@ where
             timer: Timer::new(Duration::ZERO, TimerMode::Once),
             time_scale: 1.0,
             cycles: 0,
+            pause_every_nth_cycle: 0,
             tween_fns: Default::default(),
             target: TweenTarget::This,
             ease: Default::default(),
@@ -302,6 +305,11 @@ where
 
     pub fn time_scale(mut self, time_scale: f64) -> Self {
         self.time_scale = time_scale;
+        self
+    }
+
+    pub fn pause_every_nth_cycle(mut self, cycle: usize) -> Self {
+        self.pause_every_nth_cycle = cycle;
         self
     }
 
@@ -607,6 +615,11 @@ where
                 target_options,
                 commands,
             );
+
+            if self.handle_cycle_pause() {
+                self.last_update_elapsed_forward = self.elapsed_as_if_forward();
+                return;
+            }
         }
 
         for _ in 0..times_finished_this_tick.saturating_sub(1) {
@@ -617,6 +630,11 @@ where
                 target_options,
                 commands,
             );
+
+            if self.handle_cycle_pause() {
+                self.last_update_elapsed_forward = self.elapsed_as_if_forward();
+                return;
+            }
         }
 
         let after_tick_forward = self.elapsed_as_if_forward();
@@ -805,6 +823,18 @@ where
                 played_forward,
             });
         }
+    }
+
+    fn handle_cycle_pause(&mut self) -> bool {
+        let pause = self.pause_every_nth_cycle != 0
+            && self.cycles.is_multiple_of(self.pause_every_nth_cycle);
+
+        if pause {
+            self.timer.set_elapsed(self.duration());
+            self.pause();
+        }
+
+        pause
     }
 }
 

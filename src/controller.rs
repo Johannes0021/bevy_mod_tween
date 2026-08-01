@@ -31,6 +31,16 @@ impl TweenController {
             .push(ScheduleTweenAction::TimeScale(time_scale));
     }
 
+    pub fn with_schedule_set_pause_every_nth_cycle(mut self, cycle: usize) -> Self {
+        self.schedule_set_pause_every_nth_cycle(cycle);
+        self
+    }
+
+    pub fn schedule_set_pause_every_nth_cycle(&mut self, cycle: usize) {
+        self.actions
+            .push(ScheduleTweenAction::PauseEveryNthCycle(cycle));
+    }
+
     pub fn with_schedule_set_reverse(mut self) -> Self {
         self.schedule_set_reverse();
         self
@@ -173,6 +183,10 @@ impl TweenController {
                     tween.time_scale = *time_scale;
                 }
 
+                ScheduleTweenAction::PauseEveryNthCycle(cycle) => {
+                    tween.pause_every_nth_cycle = *cycle;
+                }
+
                 ScheduleTweenAction::Reverse => {
                     tween.time_scale = -tween.time_scale;
                 }
@@ -217,6 +231,7 @@ impl TweenController {
 #[derive(Debug, Clone)]
 enum ScheduleTweenAction {
     TimeScale(f64),
+    PauseEveryNthCycle(usize),
     Reverse,
     Target(TweenTarget),
     Mode(TimerMode),

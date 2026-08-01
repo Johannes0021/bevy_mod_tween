@@ -69,6 +69,7 @@ fn setup(mut commands: Commands) {
             TweenKey::delay_secs(2.0),
         ])
         .repeating()
-        .ping_pong(),
+        .ping_pong()
+        .pause_every_nth_cycle(3),
     ));
 }
