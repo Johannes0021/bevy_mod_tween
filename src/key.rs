@@ -19,7 +19,7 @@ use std::{marker::PhantomData, time::Duration};
 // TweenKeyFinished
 //==================================================================================================
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EntityEvent)]
+#[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TweenKeyFinished {
     pub entity: Entity,
     pub index: usize,
@@ -231,8 +231,8 @@ where
                 key_to: key_to_with_dir,
                 key_fraction,
                 commands,
-                _marker0: PhantomData,
-                _marker1: PhantomData,
+                _marker_p: PhantomData,
+                _marker_m: PhantomData,
             });
         };
         if plays_in_reverse {

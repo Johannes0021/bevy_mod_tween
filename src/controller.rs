@@ -6,7 +6,7 @@ use bevy_math::curve::EaseFunction;
 use bevy_time::TimerMode;
 use std::time::Duration;
 
-#[derive(Debug, Default, Clone, Component)]
+#[derive(Component, Debug, Default, Clone)]
 pub struct TweenController {
     pub(super) read_by_tween: bool,
     actions: Vec<ScheduleTweenAction>,

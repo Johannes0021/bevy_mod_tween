@@ -1,5 +1,6 @@
 use crate::{
     controller::TweenController,
+    ease::{TweenEase, TweenEaseKey, TweenEaseSample},
     function::{MinimalTweenFnAt, TweenContext, TweenFn, TweenFnAt},
     key::{TweenKey, TweenKeyUpdateArgs},
     marker::{TweenMarker, TweenSchedule},
@@ -7,29 +8,31 @@ use crate::{
     target::{TweenTarget, TweenTargetOptions},
     tweenable::Tweenable,
 };
-use bevy_app::{App, FixedUpdate, Last, Plugin, Update};
+use bevy_app::{App, FixedUpdate, MainScheduleOrder, Plugin, SpawnScene, Update};
 use bevy_ecs::{
-    change_detection::Res,
+    change_detection::{Mut, Res},
     component::{Component, Mutable},
     entity::Entity,
     event::{EntityEvent, Event},
     hierarchy::ChildOf,
     lifecycle::HookContext,
     message::Message,
+    query::{With, Without},
     resource::Resource,
-    schedule::{IntoScheduleConfigs, SystemSet},
+    schedule::{IntoScheduleConfigs, Schedule, ScheduleLabel, SystemSet},
     system::{Commands, Query, SystemId},
     world::{DeferredWorld, World},
 };
 use bevy_log::warn;
-use bevy_math::curve::{Curve, EaseFunction};
+use bevy_math::curve::EaseFunction;
 use bevy_time::{Time, Timer, TimerMode};
 use std::{any::TypeId, collections::HashMap, marker::PhantomData, mem, time::Duration};
 
 pub mod prelude {
     pub use super::{
-        Tween, TweenEase, TweenEaseKey, TweenEaseSample, TweenFinished, TweenPlugin, TweenSystems,
+        InitAddedTweens, Tween, TweenFinished, TweenPlugin, TweenSystems,
         controller::TweenController,
+        ease::{TweenEase, TweenEaseKey, TweenEaseSample},
         function::{
             MinimalTweenFnAt, TweenContext, TweenFn, TweenFnAt, TweenKeyContext, TweenKeyFn,
         },
@@ -42,6 +45,7 @@ pub mod prelude {
 }
 
 pub mod controller;
+pub mod ease;
 pub mod function;
 pub mod key;
 pub mod marker;
@@ -51,18 +55,34 @@ pub mod tweenable;
 
 pub struct TweenPlugin;
 
-#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(SystemSet, Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TweenSystems;
+
+#[derive(ScheduleLabel, Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct InitAddedTweens;
 
 impl Plugin for TweenPlugin {
     fn build(&self, app: &mut App) {
+        app.add_schedule(Schedule::new(InitAddedTweens));
+        let mut main_schedule_order = app.world_mut().resource_mut::<MainScheduleOrder>();
+        main_schedule_order.insert_after(SpawnScene, InitAddedTweens);
+
         app.init_resource::<TweenRegistry>()
             .add_systems(
                 FixedUpdate,
                 run_fixed_update_tween_systems.in_set(TweenSystems),
             )
             .add_systems(Update, run_update_tween_systems.in_set(TweenSystems))
-            .add_systems(Last, tween_controller_discard_pending_schedules);
+            .add_systems(
+                InitAddedTweens,
+                (
+                    // Delta is zero so no tween fns should run that could change a TweenController.
+                    run_init_added_tween_systems,
+                    tween_controller_discard_pending_schedules,
+                )
+                    .chain()
+                    .in_set(TweenSystems),
+            );
     }
 }
 
@@ -72,6 +92,10 @@ fn run_update_tween_systems(world: &mut World) {
 
 fn run_fixed_update_tween_systems(world: &mut World) {
     run_tween_systems(world, |registry| &mut registry.fixed_update_systems);
+}
+
+fn run_init_added_tween_systems(world: &mut World) {
+    run_tween_systems(world, |registry| &mut registry.init_added_systems);
 }
 
 fn tween_controller_discard_pending_schedules(tween_controllers: Query<&mut TweenController>) {
@@ -94,7 +118,7 @@ fn run_tween_systems(
     systems.retain(|system_id| match world.run_system(*system_id) {
         Ok(()) => true,
         Err(err) => {
-            warn!("Tween system failed and was removed: {err:?}");
+            warn!("Tween system failed and will be removed: {err:?}");
             false
         }
     });
@@ -110,12 +134,15 @@ fn run_tween_systems(
 #[allow(clippy::type_complexity)]
 fn update_tweens<T, P, M>(
     time: Res<Time>,
-    tweens: Query<(
-        Entity,
-        &mut Tween<T, P, M>,
-        Option<&ChildOf>,
-        Option<&mut TweenController>,
-    )>,
+    tweens: Query<
+        (
+            Entity,
+            &mut Tween<T, P, M>,
+            Option<&ChildOf>,
+            Option<&mut TweenController>,
+        ),
+        Without<InitTween<T, P, M>>,
+    >,
     mut targets: Query<&mut T>,
     mut commands: Commands,
 ) where
@@ -124,17 +151,75 @@ fn update_tweens<T, P, M>(
     M: TweenMarker + Send + Sync + 'static,
 {
     let delta = time.delta();
-    for (entity, mut tween, maybe_child_of, maybe_tween_controller) in tweens {
-        if let Some(mut tween_controller) = maybe_tween_controller {
-            tween_controller.apply_to(&mut tween);
-        }
-
-        let target_options = TweenTargetOptions {
-            this: entity,
-            parent: maybe_child_of.map(|c| c.parent()),
-        };
-        tween.update(delta, &mut targets, target_options, &mut commands);
+    for (entity, mut tween, maybe_child_of, mut maybe_tween_controller) in tweens {
+        update_tween(
+            delta,
+            entity,
+            &mut tween,
+            maybe_child_of,
+            maybe_tween_controller.as_mut(),
+            &mut targets,
+            &mut commands,
+        );
     }
+}
+
+#[allow(clippy::type_complexity)]
+fn init_added_tweens<T, P, M>(
+    tweens: Query<
+        (
+            Entity,
+            &mut Tween<T, P, M>,
+            Option<&ChildOf>,
+            Option<&mut TweenController>,
+        ),
+        With<InitTween<T, P, M>>,
+    >,
+    mut targets: Query<&mut T>,
+    mut commands: Commands,
+) where
+    T: Component<Mutability = Mutable>,
+    P: Tweenable + Send + Sync + 'static,
+    M: TweenMarker + Send + Sync + 'static,
+{
+    let delta = Duration::ZERO;
+    for (entity, mut tween, maybe_child_of, mut maybe_tween_controller) in tweens {
+        update_tween(
+            delta,
+            entity,
+            &mut tween,
+            maybe_child_of,
+            maybe_tween_controller.as_mut(),
+            &mut targets,
+            &mut commands,
+        );
+
+        commands.entity(entity).remove::<InitTween<T, P, M>>();
+    }
+}
+
+fn update_tween<T, P, M>(
+    delta: Duration,
+    entity: Entity,
+    tween: &mut Mut<Tween<T, P, M>>,
+    maybe_child_of: Option<&ChildOf>,
+    maybe_tween_controller: Option<&mut Mut<TweenController>>,
+    targets: &mut Query<&mut T>,
+    commands: &mut Commands,
+) where
+    T: Component<Mutability = Mutable>,
+    P: Tweenable + Send + Sync + 'static,
+    M: TweenMarker + Send + Sync + 'static,
+{
+    if let Some(tween_controller) = maybe_tween_controller {
+        tween_controller.apply_to(tween);
+    }
+
+    let target_options = TweenTargetOptions {
+        this: entity,
+        parent: maybe_child_of.map(|c| c.parent()),
+    };
+    tween.update(delta, targets, target_options, commands);
 }
 
 //==================================================================================================
@@ -143,7 +228,8 @@ fn update_tweens<T, P, M>(
 
 #[derive(Resource, Default)]
 struct TweenRegistry {
-    system_map: HashMap<TypeId, Option<SystemId>>,
+    system_map: HashMap<TypeId, ()>, // Just a marker to track that it's already registered.
+    init_added_systems: Vec<SystemId>,
     update_systems: Vec<SystemId>,
     fixed_update_systems: Vec<SystemId>,
 }
@@ -152,7 +238,7 @@ struct TweenRegistry {
 // TweenFinished
 //==================================================================================================
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EntityEvent)]
+#[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TweenFinished {
     pub entity: Entity,
     pub cycles: usize,
@@ -187,12 +273,17 @@ where
     pub ping_pong: bool,
 }
 
-fn tween_on_add<T, P, M>(mut world: DeferredWorld<'_>, _cx: HookContext)
+fn tween_on_add<T, P, M>(mut world: DeferredWorld<'_>, cx: HookContext)
 where
     T: Component<Mutability = Mutable>,
     P: Tweenable + Send + Sync + 'static,
     M: TweenMarker + Send + Sync + 'static,
 {
+    world
+        .commands()
+        .entity(cx.entity)
+        .insert(InitTween::<T, P, M>::default());
+
     let type_id = TypeId::of::<Tween<T, P, M>>();
     let mut registry = world.resource_mut::<TweenRegistry>();
 
@@ -200,20 +291,21 @@ where
         return;
     }
 
-    registry.system_map.insert(type_id, None);
+    registry.system_map.insert(type_id, ());
 
     world.commands().queue(move |world: &mut World| {
-        let system_id = world.register_system(update_tweens::<T, P, M>);
+        let init_added_system_id = world.register_system(init_added_tweens::<T, P, M>);
+        let update_system_id = world.register_system(update_tweens::<T, P, M>);
         let mut registry = world.resource_mut::<TweenRegistry>();
 
-        registry.system_map.insert(type_id, Some(system_id));
+        registry.init_added_systems.push(init_added_system_id);
 
         match M::tween_schedule() {
             TweenSchedule::Update => {
-                registry.update_systems.push(system_id);
+                registry.update_systems.push(update_system_id);
             }
             TweenSchedule::FixedUpdate => {
-                registry.fixed_update_systems.push(system_id);
+                registry.fixed_update_systems.push(update_system_id);
             }
         }
     });
@@ -805,8 +897,8 @@ where
                 to: to_with_dir,
                 fraction: tween_fraction,
                 commands,
-                _marker0: PhantomData,
-                _marker1: PhantomData,
+                _marker_p: PhantomData,
+                _marker_m: PhantomData,
             });
         };
         if plays_in_reverse {
@@ -840,127 +932,22 @@ where
 }
 
 //==================================================================================================
-// TweenEase
+// InitTween
 //==================================================================================================
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum TweenEase {
-    Single(EaseFunction),
-    Timeline(Vec<TweenEaseKey>),
+#[derive(Component)]
+struct InitTween<T, P, M> {
+    _marker_t: PhantomData<T>,
+    _marker_p: PhantomData<P>,
+    _marker_m: PhantomData<M>,
 }
 
-impl Default for TweenEase {
+impl<T, P, M> Default for InitTween<T, P, M> {
     fn default() -> Self {
-        Self::Single(EaseFunction::Linear)
-    }
-}
-
-impl TweenEase {
-    pub fn get(&self, time: Duration) -> EaseFunction {
-        match self {
-            Self::Single(ease) => *ease,
-
-            Self::Timeline(keys) => {
-                let mut elapsed = Duration::ZERO;
-
-                for key in keys {
-                    elapsed += key.duration;
-
-                    if time < elapsed {
-                        return key.ease_fn;
-                    }
-                }
-
-                keys.last()
-                    .map(|key| key.ease_fn)
-                    .unwrap_or(EaseFunction::Linear)
-            }
+        Self {
+            _marker_t: PhantomData,
+            _marker_p: PhantomData,
+            _marker_m: PhantomData,
         }
-    }
-
-    pub fn is(&self, ease: EaseFunction, time: Duration) -> bool {
-        ease == self.get(time)
-    }
-
-    pub fn sample_clamped(
-        &self,
-        TweenEaseSample {
-            linear_elapsed,
-            total_duration,
-        }: TweenEaseSample,
-    ) -> f32 {
-        if linear_elapsed.is_zero() {
-            return 0.0;
-        }
-
-        if linear_elapsed >= total_duration {
-            return 1.0;
-        }
-
-        debug_assert!(!total_duration.is_zero());
-
-        match self {
-            Self::Single(ease) => {
-                let t = linear_elapsed.as_secs_f64() / total_duration.as_secs_f64();
-                ease.sample_clamped(t as f32)
-            }
-
-            Self::Timeline(keys) => {
-                let mut elapsed = Duration::ZERO;
-
-                for key in keys {
-                    let segment_start = elapsed;
-                    let segment_end = elapsed + key.duration;
-
-                    if linear_elapsed < segment_end {
-                        debug_assert!(!key.duration.is_zero());
-
-                        let segment_t = linear_elapsed.saturating_sub(segment_start).as_secs_f64()
-                            / key.duration.as_secs_f64();
-
-                        let eased_t = key.ease_fn.sample_clamped(segment_t.clamp(0.0, 1.0) as f32);
-
-                        let start = segment_start.as_secs_f64() / total_duration.as_secs_f64();
-
-                        let end = segment_end.as_secs_f64() / total_duration.as_secs_f64();
-
-                        return (start + ((end - start) * eased_t as f64)) as f32;
-                    }
-
-                    elapsed = segment_end;
-                }
-
-                (linear_elapsed.as_secs_f64() / total_duration.as_secs_f64()) as f32
-            }
-        }
-    }
-}
-
-//==================================================================================================
-// TweenEaseSample
-//==================================================================================================
-
-pub struct TweenEaseSample {
-    pub linear_elapsed: Duration,
-    pub total_duration: Duration,
-}
-
-//==================================================================================================
-// TweenEaseKey
-//==================================================================================================
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct TweenEaseKey {
-    pub ease_fn: EaseFunction,
-    pub duration: Duration,
-}
-
-impl TweenEaseKey {
-    pub fn duration(ease_fn: EaseFunction, duration: Duration) -> Self {
-        Self { ease_fn, duration }
-    }
-
-    pub fn duration_secs(ease_fn: EaseFunction, secs: f64) -> Self {
-        Self::duration(ease_fn, Duration::from_secs_f64(secs))
     }
 }

@@ -26,8 +26,8 @@ where
     pub to: Duration,
     pub fraction: f32,
     pub commands: &'a mut Commands<'cw, 'cs>,
-    pub(super) _marker0: PhantomData<P>,
-    pub(super) _marker1: PhantomData<M>,
+    pub(super) _marker_p: PhantomData<P>,
+    pub(super) _marker_m: PhantomData<M>,
 }
 
 impl<'a, 'cw, 'cs, 'tw, T, P, M> TweenContext<'a, 'cw, 'cs, 'tw, T, P, M>
@@ -74,8 +74,8 @@ where
     pub key_to: Duration,
     pub key_fraction: f32,
     pub commands: &'a mut Commands<'cw, 'cs>,
-    pub(super) _marker0: PhantomData<P>,
-    pub(super) _marker1: PhantomData<M>,
+    pub(super) _marker_p: PhantomData<P>,
+    pub(super) _marker_m: PhantomData<M>,
 }
 
 impl<'a, 'cw, 'cs, 'tw, T, P, M> TweenKeyContext<'a, 'cw, 'cs, 'tw, T, P, M>
@@ -279,8 +279,8 @@ impl MinimalTweenFnAt {
                                 to: cx.to,
                                 fraction: cx.fraction,
                                 commands: cx.commands,
-                                _marker0: cx._marker0,
-                                _marker1: cx._marker1,
+                                _marker_p: cx._marker_p,
+                                _marker_m: cx._marker_m,
                             });
                             cx.target = Some((e, target));
                         } else {
@@ -294,8 +294,8 @@ impl MinimalTweenFnAt {
                                 to: cx.to,
                                 fraction: cx.fraction,
                                 commands: cx.commands,
-                                _marker0: cx._marker0,
-                                _marker1: cx._marker1,
+                                _marker_p: cx._marker_p,
+                                _marker_m: cx._marker_m,
                             });
                         }
                     }
@@ -384,8 +384,8 @@ impl MinimalTweenFnAt {
                                 key_to: cx.key_to,
                                 key_fraction: cx.key_fraction,
                                 commands: cx.commands,
-                                _marker0: cx._marker0,
-                                _marker1: cx._marker1,
+                                _marker_p: cx._marker_p,
+                                _marker_m: cx._marker_m,
                             });
                             cx.target = Some((e, target));
                         } else {
@@ -403,8 +403,8 @@ impl MinimalTweenFnAt {
                                 key_to: cx.key_to,
                                 key_fraction: cx.key_fraction,
                                 commands: cx.commands,
-                                _marker0: cx._marker0,
-                                _marker1: cx._marker1,
+                                _marker_p: cx._marker_p,
+                                _marker_m: cx._marker_m,
                             });
                         }
                     }

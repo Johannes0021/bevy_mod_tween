@@ -11,7 +11,7 @@ pub trait TweenMarker: Send + Sync + 'static {
 // TweenUpdate -------------------------------------------------------------------------------------
 
 pub struct TweenUpdate<T = ()> {
-    _marker: PhantomData<T>,
+    _marker_t: PhantomData<T>,
 }
 
 impl<T> TweenMarker for TweenUpdate<T>
@@ -26,7 +26,7 @@ where
 // TweenFixedUpdate --------------------------------------------------------------------------------
 
 pub struct TweenFixedUpdate<T = ()> {
-    _marker: PhantomData<T>,
+    _marker_t: PhantomData<T>,
 }
 
 impl<T> TweenMarker for TweenFixedUpdate<T>
