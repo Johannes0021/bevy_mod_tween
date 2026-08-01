@@ -830,7 +830,7 @@ where
             && self.cycles.is_multiple_of(self.pause_every_nth_cycle);
 
         if pause {
-            self.timer.set_elapsed(self.duration());
+            self.timer.set_elapsed(Duration::ZERO);
             self.pause();
         }
 
