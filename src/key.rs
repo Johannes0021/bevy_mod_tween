@@ -205,6 +205,10 @@ where
             }
         }
 
+        if tween_from_with_dir == tween_to_with_dir {
+            return;
+        }
+
         let (key_from_with_dir, key_to_with_dir) = if plays_in_reverse {
             let key_from_reversed = self.duration.saturating_sub(key_to);
             let key_to_reversed = self.duration.saturating_sub(key_from);

@@ -717,7 +717,7 @@ where
         let from = raw_from.min(total_duration);
         let to = raw_to.min(total_duration);
 
-        if to <= from {
+        if to < from {
             return;
         }
 
@@ -794,6 +794,10 @@ where
             if start_current == self.current || (!current_duration.is_zero() && time >= to) {
                 break;
             }
+        }
+
+        if from == to {
+            return;
         }
 
         let target_entity = target_options.select(tween_target);
