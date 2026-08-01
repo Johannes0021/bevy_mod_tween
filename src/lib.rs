@@ -78,7 +78,7 @@ impl Plugin for TweenPlugin {
                 (
                     // Delta is zero so no tween fns should run that could change a TweenController.
                     run_init_added_tween_systems,
-                    tween_controller_discard_pending_schedules,
+                    tween_controller_discard_pending_schedules_read_by_any_tween,
                 )
                     .chain()
                     .in_set(TweenSystems),
@@ -98,7 +98,9 @@ fn run_init_added_tween_systems(world: &mut World) {
     run_tween_systems(world, |registry| &mut registry.init_added_systems);
 }
 
-fn tween_controller_discard_pending_schedules(tween_controllers: Query<&mut TweenController>) {
+fn tween_controller_discard_pending_schedules_read_by_any_tween(
+    tween_controllers: Query<&mut TweenController>,
+) {
     for mut tween_controller in tween_controllers {
         tween_controller.discard_pending_schedules_read_by_any_tween();
     }
