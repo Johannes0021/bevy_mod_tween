@@ -143,7 +143,7 @@ fn update_tweens<T, P, M>(
 
 #[derive(Resource, Default)]
 struct TweenRegistry {
-    system_map: HashMap<TypeId, SystemId>,
+    system_map: HashMap<TypeId, Option<SystemId>>,
     update_systems: Vec<SystemId>,
     fixed_update_systems: Vec<SystemId>,
 }
@@ -195,27 +195,19 @@ where
 {
     let type_id = TypeId::of::<Tween<T, P, M>>();
 
-    if world
-        .resource::<TweenRegistry>()
-        .system_map
-        .contains_key(&type_id)
-    {
+    let mut registry = world.resource_mut::<TweenRegistry>();
+
+    if registry.system_map.contains_key(&type_id) {
         return;
     }
 
-    world.commands().queue(move |world: &mut World| {
-        if world
-            .resource::<TweenRegistry>()
-            .system_map
-            .contains_key(&type_id)
-        {
-            return;
-        }
+    registry.system_map.insert(type_id, None);
 
+    world.commands().queue(move |world: &mut World| {
         let system_id = world.register_system(update_tweens::<T, P, M>);
 
         let mut registry = world.resource_mut::<TweenRegistry>();
-        registry.system_map.insert(type_id, system_id);
+        registry.system_map.insert(type_id, Some(system_id));
         match M::tween_schedule() {
             TweenSchedule::Update => {
                 registry.update_systems.push(system_id);

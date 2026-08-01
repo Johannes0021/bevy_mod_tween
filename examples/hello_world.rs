@@ -14,11 +14,7 @@ fn setup(mut commands: Commands) {
     commands.spawn((Camera2d, Msaa::Off));
 
     commands.spawn((
-        Sprite {
-            color: Color::srgb(0.0, 1.0, 0.0),
-            custom_size: Some(Vec2 { x: 21.0, y: 21.0 }),
-            ..default()
-        },
+        Sprite::sized(Vec2::splat(21.0)),
         // See also TweenController
         //
         // This example does not show all features. See the code for more details.
