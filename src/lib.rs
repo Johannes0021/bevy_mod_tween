@@ -179,7 +179,7 @@ where
     timer: Timer,
     pub time_scale: f64,
     cycles: usize,
-    /// Pause every Nth cycle. `0` disables cycle pauses.
+    /// `0` disables cycle pauses.
     pub pause_every_nth_cycle: usize,
     tween_fns: Vec<(TweenFnAt, TweenFn<T, P, M>)>,
     pub target: TweenTarget,
