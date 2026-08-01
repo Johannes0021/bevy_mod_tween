@@ -308,6 +308,11 @@ where
         self
     }
 
+    pub fn paused(mut self) -> Self {
+        self.pause();
+        self
+    }
+
     pub fn pause_every_nth_cycle(mut self, cycle: usize) -> Self {
         self.pause_every_nth_cycle = cycle;
         self
