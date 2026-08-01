@@ -15,7 +15,8 @@ fn setup(mut commands: Commands) {
 
     commands.spawn((
         Sprite::sized(Vec2::splat(21.0)),
-        // See also TweenController
+        // Pause all tweens on this entity:
+        //TweenController::new().with_schedule_pause(),
         //
         // This example does not show all features. See the code for more details.
         //
