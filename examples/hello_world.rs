@@ -20,24 +20,24 @@ fn setup(mut commands: Commands) {
         //
         // This example does not show all features. See the code for more details.
         //
-        // target: Transform, property: Vec3, marker: TweenUpdate<()>,
+        // target: Transform, property: Vec2, marker: TweenUpdate<()>,
         // There are also wrappers that implement Tweenable like TweenStep and TweenStepAt.
-        Tween::<Transform, Vec3, TweenUpdate>::with_set(|t, p| t.translation = p)
+        Tween::<Transform, Vec2, TweenUpdate>::with_set(|t, p| t.translation = p.extend(0.0))
             .extend([
-                TweenKey::new(Vec3::new(-120.0, -120.0, 0.0))
+                TweenKey::new(Vec2::splat(-120.0))
                     .duration_secs(1.0)
                     .at(TweenFnAt::Start, |_| info!("1"))
                     .at(TweenFnAt::End, |_| info!("2")),
-                TweenKey::new(Vec3::new(120.0, 120.0, 0.0)),
+                TweenKey::new(Vec2::splat(120.0)),
                 TweenKey::delay_secs(0.5)
                     .at(TweenFnAt::Start, |_| info!("3"))
                     .at(TweenFnAt::End, |_| info!("4")),
-                TweenKey::new(Vec3::new(120.0, 120.0, 0.0))
+                TweenKey::new(Vec2::splat(120.0))
                     .duration_secs(2.0)
                     .ease_fn(EaseFunction::Elastic(21.0)),
-                TweenKey::new(Vec3::new(120.0, -120.0, 0.0)).duration_secs(1.0),
-                TweenKey::new(Vec3::new(-120.0, 120.0, 0.0)).duration_secs(2.0),
-                TweenKey::new(Vec3::new(-120.0, -120.0, 0.0)).duration_secs(1.0),
+                TweenKey::new(Vec2::new(120.0, -120.0)).duration_secs(1.0),
+                TweenKey::new(Vec2::new(-120.0, 120.0)).duration_secs(2.0),
+                TweenKey::new(Vec2::splat(-120.0)).duration_secs(1.0),
                 TweenKey::delay_secs(2.0)
                     .at(TweenFnAt::Start, |_| info!("5"))
                     .at(TweenFnAt::End, |_| info!("6")),
