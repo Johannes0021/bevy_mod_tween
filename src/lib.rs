@@ -243,7 +243,7 @@ pub struct TweenFinished<T> {
     pub entity: Entity,
     pub cycles: usize,
     pub played_forward: bool,
-    _marker_tween_type: PhantomData<T>,
+    _marker_tween_type: PhantomData<fn() -> T>,
 }
 
 //==================================================================================================
@@ -254,7 +254,7 @@ pub struct TweenFinished<T> {
 pub struct TweenAutoPaused<T> {
     pub entity: Entity,
     pub cycles: usize,
-    _marker_tween_type: PhantomData<T>,
+    _marker_tween_type: PhantomData<fn() -> T>,
 }
 
 //==================================================================================================
