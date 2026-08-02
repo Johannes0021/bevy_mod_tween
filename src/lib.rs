@@ -36,7 +36,7 @@ pub mod prelude {
         function::{
             MinimalTweenFnAt, TweenContext, TweenFn, TweenFnAt, TweenKeyContext, TweenKeyFn,
         },
-        key::{TweenKey, TweenKeyFinished},
+        key::TweenKey,
         marker::{TweenFixedUpdate, TweenMarker, TweenSchedule, TweenUpdate},
         property::TweenPropertySet,
         target::{TweenKeyTarget, TweenTarget},
@@ -239,10 +239,22 @@ struct TweenRegistry {
 //==================================================================================================
 
 #[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct TweenFinished {
+pub struct TweenFinished<T> {
     pub entity: Entity,
     pub cycles: usize,
     pub played_forward: bool,
+    _marker_tween_type: PhantomData<T>,
+}
+
+//==================================================================================================
+// TweenAutoPaused
+//==================================================================================================
+
+#[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct TweenAutoPaused<T> {
+    pub entity: Entity,
+    pub cycles: usize,
+    _marker_tween_type: PhantomData<T>,
 }
 
 //==================================================================================================
@@ -705,7 +717,7 @@ where
                 commands,
             );
 
-            if self.handle_cycle_pause() {
+            if self.handle_cycle_pause(target_options.this, commands) {
                 self.last_update_elapsed_forward = self.elapsed_as_if_forward();
                 return;
             }
@@ -720,7 +732,7 @@ where
                 commands,
             );
 
-            if self.handle_cycle_pause() {
+            if self.handle_cycle_pause(target_options.this, commands) {
                 self.last_update_elapsed_forward = self.elapsed_as_if_forward();
                 return;
             }
@@ -910,21 +922,27 @@ where
         if to == total_duration {
             let played_forward = self.plays_forward();
             self.cycles += 1;
-            commands.trigger(TweenFinished {
+            commands.trigger(TweenFinished::<Self> {
                 entity: target_options.this,
                 cycles: self.cycles,
                 played_forward,
+                _marker_tween_type: PhantomData,
             });
         }
     }
 
-    fn handle_cycle_pause(&mut self) -> bool {
+    fn handle_cycle_pause(&mut self, entity: Entity, commands: &mut Commands) -> bool {
         let pause = self.pause_every_nth_cycle != 0
             && self.cycles.is_multiple_of(self.pause_every_nth_cycle);
 
         if pause {
             self.timer.set_elapsed(Duration::ZERO);
             self.pause();
+            commands.trigger(TweenAutoPaused::<Self> {
+                entity,
+                cycles: self.cycles,
+                _marker_tween_type: PhantomData,
+            });
         }
 
         pause

@@ -7,24 +7,12 @@ use super::{
 };
 use bevy_ecs::{
     component::{Component, Mutable},
-    entity::Entity,
-    event::{EntityEvent, Event},
+    event::Event,
     message::Message,
     system::{Commands, Query},
 };
 use bevy_math::curve::{Curve, EaseFunction};
 use std::{marker::PhantomData, time::Duration};
-
-//==================================================================================================
-// TweenKeyFinished
-//==================================================================================================
-
-#[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct TweenKeyFinished {
-    pub entity: Entity,
-    pub index: usize,
-    pub played_forward: bool,
-}
 
 //==================================================================================================
 // TweenKey
