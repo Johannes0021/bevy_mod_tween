@@ -30,7 +30,7 @@ use std::{any::TypeId, collections::HashMap, marker::PhantomData, mem, time::Dur
 
 pub mod prelude {
     pub use super::{
-        InitAddedTweens, Tween, TweenFinished, TweenPlugin, TweenSystems,
+        InitAddedTweens, Tween, TweenAutoPaused, TweenFinished, TweenPlugin, TweenSystems,
         controller::TweenController,
         ease::{TweenEase, TweenEaseKey, TweenEaseSample},
         function::{
