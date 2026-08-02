@@ -238,23 +238,44 @@ struct TweenRegistry {
 // TweenFinished
 //==================================================================================================
 
-#[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(EntityEvent, Debug, Copy, PartialEq, Eq, Hash)]
 pub struct TweenFinished<T> {
     pub entity: Entity,
     pub cycles: usize,
     pub played_forward: bool,
-    _marker_tween_type: PhantomData<fn() -> T>,
+    _marker_tween_type: PhantomData<T>,
+}
+
+impl<T> Clone for TweenFinished<T> {
+    fn clone(&self) -> Self {
+        Self {
+            entity: self.entity,
+            cycles: self.cycles,
+            played_forward: self.played_forward,
+            _marker_tween_type: PhantomData,
+        }
+    }
 }
 
 //==================================================================================================
 // TweenAutoPaused
 //==================================================================================================
 
-#[derive(EntityEvent, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(EntityEvent, Debug, Copy, PartialEq, Eq, Hash)]
 pub struct TweenAutoPaused<T> {
     pub entity: Entity,
     pub cycles: usize,
-    _marker_tween_type: PhantomData<fn() -> T>,
+    _marker_tween_type: PhantomData<T>,
+}
+
+impl<T> Clone for TweenAutoPaused<T> {
+    fn clone(&self) -> Self {
+        Self {
+            entity: self.entity,
+            cycles: self.cycles,
+            _marker_tween_type: PhantomData,
+        }
+    }
 }
 
 //==================================================================================================
