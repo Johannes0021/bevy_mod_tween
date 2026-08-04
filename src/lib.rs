@@ -26,7 +26,7 @@ use bevy_ecs::{
 use bevy_log::warn;
 use bevy_math::curve::EaseFunction;
 use bevy_time::{Time, Timer, TimerMode};
-use std::{any::TypeId, collections::HashMap, marker::PhantomData, mem, time::Duration};
+use std::{any::TypeId, collections::HashSet, marker::PhantomData, mem, time::Duration};
 
 pub mod prelude {
     pub use super::{
@@ -228,7 +228,7 @@ fn update_tween<T, P, M>(
 
 #[derive(Resource, Default)]
 struct TweenRegistry {
-    system_map: HashMap<TypeId, ()>, // Just a marker to track that it's already registered.
+    types: HashSet<TypeId>,
     init_added_systems: Vec<SystemId>,
     update_systems: Vec<SystemId>,
     fixed_update_systems: Vec<SystemId>,
@@ -316,11 +316,11 @@ where
     let type_id = TypeId::of::<Tween<T, P, M>>();
     let mut registry = world.resource_mut::<TweenRegistry>();
 
-    if registry.system_map.contains_key(&type_id) {
+    if registry.types.contains(&type_id) {
         return;
     }
 
-    registry.system_map.insert(type_id, ());
+    registry.types.insert(type_id);
 
     world.commands().queue(move |world: &mut World| {
         let init_added_system_id = world.register_system(init_added_tweens::<T, P, M>);
