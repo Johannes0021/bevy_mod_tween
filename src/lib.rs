@@ -75,7 +75,7 @@ impl Plugin for TweenPlugin {
             .add_systems(Update, run_update_tween_systems.in_set(TweenSystems))
             .add_systems(
                 InitAddedTweens,
-                (tween_controller_fulsh, run_init_added_tween_systems)
+                (tween_controller_flush, run_init_added_tween_systems)
                     .chain()
                     .in_set(TweenSystems),
             );
@@ -94,7 +94,7 @@ fn run_init_added_tween_systems(world: &mut World) {
     run_tween_systems(world, |registry| &mut registry.init_added_systems);
 }
 
-fn tween_controller_fulsh(tween_controllers: Query<&mut TweenController>) {
+fn tween_controller_flush(tween_controllers: Query<&mut TweenController>) {
     for mut tween_controller in tween_controllers {
         tween_controller.flush();
     }
