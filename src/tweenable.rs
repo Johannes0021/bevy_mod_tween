@@ -1,5 +1,6 @@
 use bevy_asset::{Asset, Handle};
 use bevy_color::{Color, Mix};
+use bevy_derive::{Deref, DerefMut};
 use bevy_math::{DVec2, DVec3, DVec4, FloatExt, IVec2, IVec3, IVec4, Rect, Vec2, Vec3, Vec4};
 use bevy_transform::components::Transform;
 use bevy_ui::Val;
@@ -204,7 +205,7 @@ where
 // TweenStep
 //==================================================================================================
 
-#[derive(Clone)]
+#[derive(Clone, Deref, DerefMut)]
 pub struct TweenStep<T>(pub T)
 where
     T: Clone;
@@ -222,8 +223,9 @@ where
 // TweenStepAt
 //==================================================================================================
 
-#[derive(Clone)]
+#[derive(Clone, Deref, DerefMut)]
 pub struct TweenStepAt<T> {
+    #[deref]
     pub value: T,
     pub at: f32,
 }

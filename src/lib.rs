@@ -284,6 +284,7 @@ impl<T> Clone for TweenAutoPaused<T> {
 
 #[derive(Component)]
 #[component(on_add = tween_on_add::<T, P, M>)]
+#[require(InitTween::<T, P, M>::default())]
 pub struct Tween<T, P, M>
 where
     T: Component<Mutability = Mutable>,
@@ -306,17 +307,12 @@ where
     pub ping_pong: bool,
 }
 
-fn tween_on_add<T, P, M>(mut world: DeferredWorld<'_>, cx: HookContext)
+fn tween_on_add<T, P, M>(mut world: DeferredWorld<'_>, _cx: HookContext)
 where
     T: Component<Mutability = Mutable>,
     P: Tweenable + Send + Sync + 'static,
     M: TweenMarker + Send + Sync + 'static,
 {
-    world
-        .commands()
-        .entity(cx.entity)
-        .insert(InitTween::<T, P, M>::default());
-
     let type_id = TypeId::of::<Tween<T, P, M>>();
     let mut registry = world.resource_mut::<TweenRegistry>();
 
