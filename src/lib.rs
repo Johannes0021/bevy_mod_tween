@@ -284,7 +284,7 @@ impl<T> Clone for TweenAutoPaused<T> {
 
 #[derive(Component)]
 #[component(on_add = tween_on_add::<T, P, M>)]
-#[require(InitTween::<T, P, M>::default())]
+#[require(InitTween::<T, P, M>)]
 pub struct Tween<T, P, M>
 where
     T: Component<Mutability = Mutable>,
