@@ -176,7 +176,7 @@ impl TweenController {
     pub(super) fn flush(&mut self) {
         self.read.clear();
         mem::swap(&mut self.read, &mut self.write);
-        self.generation += 1;
+        self.generation = self.generation.wrapping_add(1);
     }
 
     fn cursor(&self) -> TweenControllerCursor {

@@ -41,7 +41,7 @@ where
         Self {
             value: None,
             duration: Duration::ZERO,
-            tween_fns: Default::default(),
+            tween_fns: Vec::default(),
             target: TweenKeyTarget::Derive,
             ease_fn: EaseFunction::Linear,
         }

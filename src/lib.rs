@@ -178,6 +178,8 @@ fn init_added_tweens<T, P, M>(
 {
     let delta = Duration::ZERO;
     for (entity, mut tween, maybe_child_of, mut maybe_tween_controller) in tweens {
+        tween.controller_cursor = TweenControllerCursor::default();
+
         update_tween(
             delta,
             entity,
@@ -363,19 +365,19 @@ where
 {
     pub fn with_set(set_property_fn: TweenPropertySet<T, P>) -> Self {
         Self {
-            controller_cursor: Default::default(),
+            controller_cursor: TweenControllerCursor::default(),
             set_property_fn,
-            keys: Default::default(),
-            seek_from_to_unchecked: Default::default(),
+            keys: Vec::default(),
+            seek_from_to_unchecked: Vec::default(),
             current: 0,
             last_update_elapsed_forward: Duration::ZERO,
             timer: Timer::new(Duration::ZERO, TimerMode::Once),
             time_scale: 1.0,
             cycles: 0,
             pause_every_nth_cycle: 0,
-            tween_fns: Default::default(),
+            tween_fns: Vec::default(),
             target: TweenTarget::This,
-            ease: Default::default(),
+            ease: TweenEase::default(),
             ping_pong: false,
         }
     }
