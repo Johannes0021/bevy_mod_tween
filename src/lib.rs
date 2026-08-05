@@ -545,7 +545,7 @@ where
     }
 
     pub fn schedule_seek_elapsed_secs(&mut self, secs: f64) {
-        self.schedule_seek_elapsed(Duration::from_secs_f64(secs))
+        self.schedule_seek_elapsed(checked_duration_from_secs_f64(secs))
     }
 
     pub fn schedule_finish(&mut self) {
@@ -587,7 +587,7 @@ where
             linear_elapsed
         } else {
             let fraction: f32 = self.fraction();
-            Duration::from_secs_f64(self.duration_secs() * fraction as f64)
+            checked_duration_from_secs_f64(self.duration_secs() * fraction as f64)
         };
 
         const MIN_ELAPSED: Duration = Duration::from_micros(100); // 1e-4s
@@ -983,4 +983,13 @@ impl<T, P, M> Default for InitTween<T, P, M> {
             _marker_m: PhantomData,
         }
     }
+}
+
+//==================================================================================================
+// helper functions
+//==================================================================================================
+
+pub(crate) fn checked_duration_from_secs_f64(secs: f64) -> Duration {
+    debug_assert!(secs >= 0.0, "Duration must be non-negative");
+    Duration::from_secs_f64(secs.max(0.0))
 }

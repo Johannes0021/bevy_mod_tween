@@ -1,3 +1,4 @@
+use super::checked_duration_from_secs_f64;
 use bevy_math::curve::{Curve, EaseFunction};
 use std::time::Duration;
 
@@ -123,6 +124,6 @@ impl TweenEaseKey {
     }
 
     pub fn duration_secs(ease_fn: EaseFunction, secs: f64) -> Self {
-        Self::duration(ease_fn, Duration::from_secs_f64(secs))
+        Self::duration(ease_fn, checked_duration_from_secs_f64(secs))
     }
 }

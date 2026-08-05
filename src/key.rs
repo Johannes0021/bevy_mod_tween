@@ -1,4 +1,5 @@
 use super::{
+    checked_duration_from_secs_f64,
     function::{MinimalTweenFnAt, TweenFnAt, TweenKeyContext, TweenKeyFn},
     marker::TweenMarker,
     property::TweenPropertySet,
@@ -77,7 +78,7 @@ where
     }
 
     pub fn duration_secs(mut self, secs: f64) -> Self {
-        self.duration = Duration::from_secs_f64(secs);
+        self.duration = checked_duration_from_secs_f64(secs);
         self
     }
 

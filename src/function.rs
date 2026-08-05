@@ -1,4 +1,4 @@
-use super::{Tween, marker::TweenMarker, tweenable::Tweenable};
+use super::{Tween, checked_duration_from_secs_f64, marker::TweenMarker, tweenable::Tweenable};
 use bevy_ecs::{
     change_detection::Mut,
     component::{Component, Mutable},
@@ -132,9 +132,9 @@ impl From<TweenFnAt> for MinimalTweenFnAt {
             TweenFnAt::EveryTick => Self::EveryNthTick(NonZeroUsize::MIN),
             TweenFnAt::EveryNthTick(n) => Self::EveryNthTick(n),
             TweenFnAt::Every(duration) => Self::Every(duration),
-            TweenFnAt::EverySecs(secs) => Self::Every(Duration::from_secs_f64(secs)),
+            TweenFnAt::EverySecs(secs) => Self::Every(checked_duration_from_secs_f64(secs)),
             TweenFnAt::Duration(duration) => Self::Duration(duration),
-            TweenFnAt::Secs(secs) => Self::Duration(Duration::from_secs_f64(secs)),
+            TweenFnAt::Secs(secs) => Self::Duration(checked_duration_from_secs_f64(secs)),
             TweenFnAt::End => Self::End,
         }
     }
@@ -162,7 +162,7 @@ impl TweenFnAt {
     fn normalized_duration(&self) -> Duration {
         match self {
             Self::Every(duration) | Self::Duration(duration) => *duration,
-            Self::EverySecs(secs) | Self::Secs(secs) => Duration::from_secs_f64(*secs),
+            Self::EverySecs(secs) | Self::Secs(secs) => checked_duration_from_secs_f64(*secs),
             _ => unreachable!(),
         }
     }

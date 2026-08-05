@@ -1,5 +1,6 @@
 use super::{
-    Tween, TweenEase, TweenEaseKey, marker::TweenMarker, target::TweenTarget, tweenable::Tweenable,
+    Tween, TweenEase, TweenEaseKey, checked_duration_from_secs_f64, marker::TweenMarker,
+    target::TweenTarget, tweenable::Tweenable,
 };
 use bevy_ecs::component::{Component, Mutable};
 use bevy_math::curve::EaseFunction;
@@ -128,7 +129,7 @@ impl TweenController {
     }
 
     pub fn schedule_seek_elapsed_secs(&mut self, secs: f64) {
-        self.schedule_seek_elapsed(Duration::from_secs_f64(secs));
+        self.schedule_seek_elapsed(checked_duration_from_secs_f64(secs));
     }
 
     pub fn with_schedule_finish(mut self) -> Self {
