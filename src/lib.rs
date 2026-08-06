@@ -279,7 +279,7 @@ impl<T> Clone for TweenAutoPaused<T> {
 //==================================================================================================
 
 #[derive(Component)]
-#[component(on_add = tween_on_add::<T, P, M>)]
+#[component(on_add = tween_on_add::<T, P, M>, on_remove = tween_on_remove::<T, P, M>)]
 #[require(InitTween::<T, P, M>)]
 pub struct Tween<T, P, M>
 where
@@ -335,6 +335,20 @@ where
             }
         }
     });
+}
+
+fn tween_on_remove<T, P, M>(mut world: DeferredWorld<'_>, cx: HookContext)
+where
+    T: Component<Mutability = Mutable>,
+    P: Tweenable + Send + Sync + 'static,
+    M: TweenMarker + Send + Sync + 'static,
+{
+    if world.entity(cx.entity).contains::<InitTween<T, P, M>>() {
+        world
+            .commands()
+            .entity(cx.entity)
+            .remove::<InitTween<T, P, M>>();
+    }
 }
 
 impl<T, M> Default for Tween<T, T, M>
