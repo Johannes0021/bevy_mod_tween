@@ -837,6 +837,10 @@ where
     ) {
         debug_assert!(raw_to >= raw_from);
 
+        if self.keys.is_empty() {
+            return;
+        }
+
         let total_duration = self.duration();
 
         let from = raw_from.min(total_duration);
