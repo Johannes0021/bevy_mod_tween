@@ -770,13 +770,15 @@ where
         let after_tick_forward = self.elapsed_as_if_forward();
 
         if times_finished_this_tick > 0 {
-            self.seek_from_to(
-                Duration::ZERO,
-                after_tick_forward,
-                targets,
-                target_options,
-                commands,
-            );
+            if after_tick_forward != self.duration() {
+                self.seek_from_to(
+                    Duration::ZERO,
+                    after_tick_forward,
+                    targets,
+                    target_options,
+                    commands,
+                );
+            }
         } else {
             if before_tick_forward <= after_tick_forward {
                 self.seek_from_to(
