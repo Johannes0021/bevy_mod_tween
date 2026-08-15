@@ -615,19 +615,19 @@ where
         let total_duration = self.duration();
         let timer_elapsed = self.timer.elapsed();
 
-        if timer_elapsed.is_zero() {
-            if plays_forward {
-                return Duration::ZERO;
-            } else {
-                return total_duration;
-            }
-        }
-
         if timer_elapsed == total_duration {
             if plays_forward {
                 return total_duration;
             } else {
                 return Duration::ZERO;
+            }
+        }
+
+        if timer_elapsed.is_zero() {
+            if plays_forward {
+                return Duration::ZERO;
+            } else {
+                return total_duration;
             }
         }
 
@@ -696,12 +696,12 @@ where
         let total_duration = self.duration();
         let timer_elapsed = self.timer.elapsed();
 
-        if timer_elapsed.is_zero() {
-            return if plays_forward { 0.0 } else { 1.0 };
-        }
-
         if timer_elapsed == total_duration {
             return if plays_forward { 1.0 } else { 0.0 };
+        }
+
+        if timer_elapsed.is_zero() {
+            return if plays_forward { 0.0 } else { 1.0 };
         }
 
         let linear_elapsed = if self.plays_forward() {

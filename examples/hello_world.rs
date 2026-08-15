@@ -32,6 +32,11 @@ fn setup(mut commands: Commands) {
                 TweenKey::delay_secs(0.5)
                     .at(TweenFnAt::Start, |_| info!("3"))
                     .at(TweenFnAt::End, |_| info!("4")),
+                TweenKey::default()
+                    .at(TweenFnAt::Start, |_| info!("5"))
+                    .at(TweenFnAt::Secs(0.0), |_| info!("6"))
+                    .at(TweenFnAt::Secs(0.5), |_| info!("unreachable"))
+                    .at(TweenFnAt::End, |_| info!("7")),
                 TweenKey::new(Vec2::splat(120.0))
                     .duration_secs(2.0)
                     .ease_fn(EaseFunction::Elastic(21.0)),
@@ -39,8 +44,8 @@ fn setup(mut commands: Commands) {
                 TweenKey::new(Vec2::new(-120.0, 120.0)).duration_secs(2.0),
                 TweenKey::new(Vec2::splat(-120.0)).duration_secs(1.0),
                 TweenKey::delay_secs(2.0)
-                    .at(TweenFnAt::Start, |_| info!("5"))
-                    .at(TweenFnAt::End, |_| info!("6")),
+                    .at(TweenFnAt::Start, |_| info!("8"))
+                    .at(TweenFnAt::End, |_| info!("9")),
             ])
             .at(TweenFnAt::Start, |_| {
                 info!("start ----------------------------------------------")

@@ -158,8 +158,10 @@ where
         let mut target = target_entity.and_then(|e| targets.get_mut(e).ok());
 
         let key_fraction = {
-            let fraction = if self.duration == Duration::ZERO {
+            let fraction = if key_to == self.duration {
                 1.0
+            } else if key_to.is_zero() {
+                0.0
             } else {
                 key_to.as_secs_f32() / self.duration.as_secs_f32()
             };
