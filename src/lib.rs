@@ -25,7 +25,7 @@ use bevy_ecs::{
 };
 use bevy_log::warn;
 use bevy_math::curve::EaseFunction;
-use bevy_time::{Time, Timer, TimerMode};
+use bevy_time::{Fixed, Time, Timer, TimerMode};
 use std::{any::TypeId, collections::HashSet, marker::PhantomData, mem, time::Duration};
 
 pub mod prelude {
@@ -128,6 +128,39 @@ fn run_tween_systems(
 #[allow(clippy::type_complexity)]
 fn update_tweens<T, P, M>(
     time: Res<Time>,
+    tweens: Query<
+        (
+            Entity,
+            &mut Tween<T, P, M>,
+            Option<&ChildOf>,
+            Option<&mut TweenController>,
+        ),
+        Without<InitTween<T, P, M>>,
+    >,
+    mut targets: Query<&mut T>,
+    mut commands: Commands,
+) where
+    T: Component<Mutability = Mutable>,
+    P: Tweenable + Send + Sync + 'static,
+    M: TweenMarker + Send + Sync + 'static,
+{
+    let delta = time.delta();
+    for (entity, mut tween, maybe_child_of, mut maybe_tween_controller) in tweens {
+        update_tween(
+            delta,
+            entity,
+            &mut tween,
+            maybe_child_of,
+            maybe_tween_controller.as_mut(),
+            &mut targets,
+            &mut commands,
+        );
+    }
+}
+
+#[allow(clippy::type_complexity)]
+fn fixed_update_tweens<T, P, M>(
+    time: Res<Time<Fixed>>,
     tweens: Query<
         (
             Entity,
@@ -320,13 +353,20 @@ where
     registry.types.insert(type_id);
 
     world.commands().queue(move |world: &mut World| {
+        let tween_schedule = M::tween_schedule();
+
         let init_added_system_id = world.register_system(init_added_tweens::<T, P, M>);
-        let update_system_id = world.register_system(update_tweens::<T, P, M>);
+
+        let update_system_id = match tween_schedule {
+            TweenSchedule::Update => world.register_system(update_tweens::<T, P, M>),
+            TweenSchedule::FixedUpdate => world.register_system(fixed_update_tweens::<T, P, M>),
+        };
+
         let mut registry = world.resource_mut::<TweenRegistry>();
 
         registry.init_added_systems.push(init_added_system_id);
 
-        match M::tween_schedule() {
+        match tween_schedule {
             TweenSchedule::Update => {
                 registry.update_systems.push(update_system_id);
             }
