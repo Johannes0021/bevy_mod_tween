@@ -326,6 +326,7 @@ where
     seek_from_to_unchecked: Vec<(Duration, Duration)>,
     current: usize,
     last_update_elapsed_forward: Duration,
+    last_seek_from_to: Option<(Duration, Duration)>,
     timer: Timer,
     pub time_scale: f64,
     cycles: usize,
@@ -425,6 +426,7 @@ where
             seek_from_to_unchecked: Vec::default(),
             current: 0,
             last_update_elapsed_forward: Duration::ZERO,
+            last_seek_from_to: None,
             timer: Timer::new(Duration::ZERO, TimerMode::Once),
             time_scale: 1.0,
             cycles: 0,
@@ -644,9 +646,7 @@ where
             checked_duration_from_secs_f64(self.duration_secs() * fraction as f64)
         };
 
-        const MIN_ELAPSED: Duration = Duration::from_micros(100); // 1e-4s
-
-        elapsed.max(MIN_ELAPSED).min(self.duration())
+        elapsed.min(self.duration())
     }
 
     fn elapsed_as_if_forward(&self) -> Duration {
@@ -827,26 +827,24 @@ where
                     commands,
                 );
             }
+        } else if before_tick_forward <= after_tick_forward {
+            self.seek_from_to(
+                before_tick_forward,
+                after_tick_forward,
+                targets,
+                target_options,
+                commands,
+            );
         } else {
-            if before_tick_forward <= after_tick_forward {
-                self.seek_from_to(
-                    before_tick_forward,
-                    after_tick_forward,
-                    targets,
-                    target_options,
-                    commands,
-                );
-            } else {
-                self.time_scale = -self.time_scale;
-                self.seek_from_to(
-                    after_tick_forward,
-                    before_tick_forward,
-                    targets,
-                    target_options,
-                    commands,
-                );
-                self.time_scale = -self.time_scale;
-            }
+            self.time_scale = -self.time_scale;
+            self.seek_from_to(
+                after_tick_forward,
+                before_tick_forward,
+                targets,
+                target_options,
+                commands,
+            );
+            self.time_scale = -self.time_scale;
         }
 
         self.last_update_elapsed_forward = after_tick_forward;
@@ -872,7 +870,15 @@ where
         if from <= to {
             self.seek_from_to(from, to, targets, target_options, commands);
         } else {
-            self.seek_from_to(from, self.duration(), targets, target_options, commands);
+            let timer_elapsed = self.timer.elapsed();
+
+            self.timer.set_elapsed(total_duration);
+            self.seek_from_to(from, total_duration, targets, target_options, commands);
+
+            if self.timer.elapsed() != timer_elapsed {
+                self.timer.set_elapsed(timer_elapsed);
+            }
+
             self.seek_from_to(Duration::ZERO, to, targets, target_options, commands);
         }
     }
@@ -900,9 +906,24 @@ where
             return;
         }
 
+        let can_be_start_or_end = if let Some((last_from, last_to)) = self.last_seek_from_to {
+            last_from != last_to || from != last_to || total_duration.is_zero()
+        } else {
+            true
+        };
+
         let set_property_fn = self.set_property_fn;
         let tween_fraction = self.fraction();
         let plays_in_reverse = self.plays_in_reverse();
+
+        let is_start = can_be_start_or_end && from.is_zero();
+        let is_end = self.timer.elapsed() == total_duration;
+        let (is_start_with_dir, is_end_with_dir) = if plays_in_reverse {
+            (is_end, is_start)
+        } else {
+            (is_start, is_end)
+        };
+
         let tween_target = self.target;
         let (from_with_dir, to_with_dir) = if plays_in_reverse {
             let from_reversed = total_duration.saturating_sub(to);
@@ -912,16 +933,17 @@ where
             (from, to)
         };
 
+        let keys_len = self.keys.len();
         let start_current = self.current;
-        let mut time = from;
+        let mut already_seeked_to = from;
         loop {
-            let current_idx = if plays_in_reverse {
-                self.keys.len().saturating_sub(self.current + 1)
+            let current_with_dir = if plays_in_reverse {
+                keys_len.saturating_sub(self.current + 1)
             } else {
                 self.current
             };
 
-            let (before_keys, after_keys) = self.keys.split_at_mut(current_idx);
+            let (before_keys, after_keys) = self.keys.split_at_mut(current_with_dir);
             let ((current_start, current), after_keys) = {
                 let ((current_start, current), after_keys) = after_keys.split_first_mut().unwrap();
 
@@ -939,19 +961,42 @@ where
             let current_duration = current.duration;
             let current_end = current_start + current_duration;
 
-            let key_from = time.saturating_sub(current_start).min(current_duration);
+            let key_from = already_seeked_to
+                .saturating_sub(current_start)
+                .min(current_duration);
             let key_to = to.saturating_sub(current_start).min(current_duration);
+
+            let key_is_start = if self.current == 0 {
+                is_start
+            } else {
+                can_be_start_or_end && key_from.is_zero()
+            };
+            let key_is_end = if self.current + 1 == keys_len {
+                is_end
+            } else {
+                can_be_start_or_end && current_end <= to
+            };
+            let (key_is_start_with_dir, key_is_end_with_dir) = if plays_in_reverse {
+                (key_is_end, key_is_start)
+            } else {
+                (key_is_start, key_is_end)
+            };
 
             current.update_from_to(TweenKeyUpdateArgs {
                 set_property_fn,
                 targets,
                 target_options,
                 plays_in_reverse,
+                tween_is_start: is_start_with_dir,
+                tween_is_end: is_end_with_dir,
                 tween_target,
+                tween_cycles: self.cycles,
                 tween_duration: total_duration,
                 tween_from_with_dir: from_with_dir,
                 tween_to_with_dir: to_with_dir,
                 tween_fraction,
+                key_is_start_with_dir,
+                key_is_end_with_dir,
                 key_from,
                 key_to,
                 previous_key,
@@ -959,24 +1004,22 @@ where
                 commands,
             });
 
-            if current_end <= to {
-                time = current_end;
-                if self.current + 1 < self.keys.len() {
+            if key_is_end {
+                already_seeked_to = current_end;
+                if self.current + 1 < keys_len {
                     self.current += 1;
                 } else {
                     self.current = 0;
                 }
             } else {
-                time = to;
+                already_seeked_to = to;
             }
 
-            if start_current == self.current || (!current_duration.is_zero() && time >= to) {
+            if start_current == self.current
+                || (!current_duration.is_zero() && already_seeked_to >= to)
+            {
                 break;
             }
-        }
-
-        if from == to {
-            return;
         }
 
         let target_entity = target_options.select(tween_target);
@@ -987,6 +1030,9 @@ where
                 parent: target_options.parent,
                 target: target_entity.zip(target.as_mut()),
                 plays_in_reverse,
+                is_start: is_start_with_dir,
+                is_end: is_end_with_dir,
+                cycles: self.cycles,
                 duration: total_duration,
                 from: from_with_dir,
                 to: to_with_dir,
@@ -1002,7 +1048,7 @@ where
             self.tween_fns.iter_mut().for_each(&mut tick_tween_fn);
         }
 
-        if to == total_duration {
+        if is_end {
             let played_forward = self.plays_forward();
             self.cycles += 1;
             commands.trigger(TweenFinished::<Self> {
@@ -1012,6 +1058,8 @@ where
                 _marker_tween_type: PhantomData,
             });
         }
+
+        self.last_seek_from_to = Some((from, to))
     }
 
     fn handle_cycle_pause(&mut self, entity: Entity, commands: &mut Commands) -> bool {

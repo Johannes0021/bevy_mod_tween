@@ -21,6 +21,9 @@ where
     pub parent: Option<Entity>,
     pub target: Option<(Entity, &'a mut Mut<'tw, T>)>,
     pub plays_in_reverse: bool,
+    pub is_start: bool,
+    pub is_end: bool,
+    pub cycles: usize,
     pub duration: Duration,
     pub from: Duration,
     pub to: Duration,
@@ -47,6 +50,10 @@ where
     pub fn commands_despawn_tween_entiy(&mut self) {
         self.commands.entity(self.entity).despawn();
     }
+
+    pub fn has_advanced(&self) -> bool {
+        self.is_start || self.is_end || (self.from != self.to && !self.duration.is_zero())
+    }
 }
 
 pub type TweenFn<T, P, M> = Box<dyn FnMut(TweenContext<'_, '_, '_, '_, T, P, M>) + Send + Sync>;
@@ -65,10 +72,15 @@ where
     pub parent: Option<Entity>,
     pub target: Option<(Entity, &'a mut Mut<'tw, T>)>,
     pub plays_in_reverse: bool,
+    pub tween_is_start: bool,
+    pub tween_is_end: bool,
+    pub tween_cycles: usize,
     pub tween_duration: Duration,
     pub tween_from: Duration,
     pub tween_to: Duration,
     pub tween_fraction: f32,
+    pub key_is_start: bool,
+    pub key_is_end: bool,
     pub key_duration: Duration,
     pub key_from: Duration,
     pub key_to: Duration,
@@ -98,6 +110,12 @@ where
 
     pub fn commands_despawn_tween_entiy(&mut self) {
         self.commands.entity(self.entity).despawn();
+    }
+
+    pub fn has_advanced(&self) -> bool {
+        self.key_is_start
+            || self.key_is_end
+            || (self.key_from != self.key_to && !self.key_duration.is_zero())
     }
 }
 
@@ -230,13 +248,13 @@ impl MinimalTweenFnAt {
     {
         match self {
             Self::Start => Box::new(move |cx| {
-                if cx.from == Duration::ZERO {
+                if cx.is_start {
                     tween_fn(cx);
                 }
             }),
 
             Self::End => Box::new(move |cx| {
-                if cx.to == cx.duration {
+                if cx.is_end {
                     tween_fn(cx);
                 }
             }),
@@ -246,8 +264,7 @@ impl MinimalTweenFnAt {
             Self::EveryNthTick(nth_tick) => {
                 let mut tick: usize = 0;
                 Box::new(move |cx| {
-                    let is_start_end = (cx.plays_in_reverse && cx.from == Duration::ZERO)
-                        || (!cx.plays_in_reverse && cx.to == cx.duration);
+                    let is_start_or_end = cx.is_start || cx.is_end;
 
                     tick += 1;
                     if tick.is_multiple_of(nth_tick.into()) {
@@ -255,7 +272,7 @@ impl MinimalTweenFnAt {
                         tween_fn(cx);
                     }
 
-                    if is_start_end {
+                    if is_start_or_end {
                         tick = 0;
                     }
                 })
@@ -274,6 +291,9 @@ impl MinimalTweenFnAt {
                                 parent: cx.parent,
                                 target: Some((e, target)),
                                 plays_in_reverse: cx.plays_in_reverse,
+                                is_start: cx.is_start,
+                                is_end: cx.is_end,
+                                cycles: cx.cycles,
                                 duration: cx.duration,
                                 from: cx.from,
                                 to: cx.to,
@@ -289,6 +309,9 @@ impl MinimalTweenFnAt {
                                 parent: cx.parent,
                                 target: None,
                                 plays_in_reverse: cx.plays_in_reverse,
+                                is_start: cx.is_start,
+                                is_end: cx.is_end,
+                                cycles: cx.cycles,
                                 duration: cx.duration,
                                 from: cx.from,
                                 to: cx.to,
@@ -300,21 +323,14 @@ impl MinimalTweenFnAt {
                         }
                     }
 
-                    let is_start_end = (cx.plays_in_reverse && cx.from == Duration::ZERO)
-                        || (!cx.plays_in_reverse && cx.to == cx.duration);
-
-                    if is_start_end {
+                    if cx.is_start || cx.is_end {
                         time = Duration::ZERO;
                     }
                 })
             }
 
             Self::Duration(duration) => Box::new(move |cx| {
-                let started = cx.from == Duration::ZERO;
-
-                if (started && duration == Duration::ZERO)
-                    || (duration > cx.from && duration <= cx.to)
-                {
+                if cx.has_advanced() && (duration >= cx.from && duration <= cx.to) {
                     tween_fn(cx);
                 }
             }),
@@ -330,13 +346,13 @@ impl MinimalTweenFnAt {
     {
         match self {
             Self::Start => Box::new(move |cx| {
-                if cx.key_from == Duration::ZERO {
+                if cx.key_is_start {
                     tween_fn(cx);
                 }
             }),
 
             Self::End => Box::new(move |cx| {
-                if cx.key_to == cx.key_duration {
+                if cx.key_is_end {
                     tween_fn(cx);
                 }
             }),
@@ -346,8 +362,7 @@ impl MinimalTweenFnAt {
             Self::EveryNthTick(nth_tick) => {
                 let mut tick: usize = 0;
                 Box::new(move |cx| {
-                    let is_start_end = (cx.plays_in_reverse && cx.key_from == Duration::ZERO)
-                        || (!cx.plays_in_reverse && cx.key_to == cx.key_duration);
+                    let key_is_start_or_end = cx.key_is_start || cx.key_is_end;
 
                     tick += 1;
                     if tick.is_multiple_of(nth_tick.into()) {
@@ -355,7 +370,7 @@ impl MinimalTweenFnAt {
                         tween_fn(cx);
                     }
 
-                    if is_start_end {
+                    if key_is_start_or_end {
                         tick = 0;
                     }
                 })
@@ -375,10 +390,15 @@ impl MinimalTweenFnAt {
                                 parent: cx.parent,
                                 target: Some((e, target)),
                                 plays_in_reverse: cx.plays_in_reverse,
+                                tween_is_start: cx.tween_is_start,
+                                tween_is_end: cx.tween_is_end,
+                                tween_cycles: cx.tween_cycles,
                                 tween_duration: cx.tween_duration,
                                 tween_from: cx.tween_from,
                                 tween_to: cx.tween_to,
                                 tween_fraction: cx.tween_fraction,
+                                key_is_start: cx.key_is_start,
+                                key_is_end: cx.key_is_end,
                                 key_duration: cx.key_duration,
                                 key_from: cx.key_from,
                                 key_to: cx.key_to,
@@ -394,10 +414,15 @@ impl MinimalTweenFnAt {
                                 parent: cx.parent,
                                 target: None,
                                 plays_in_reverse: cx.plays_in_reverse,
+                                tween_is_start: cx.tween_is_start,
+                                tween_is_end: cx.tween_is_end,
+                                tween_cycles: cx.tween_cycles,
                                 tween_duration: cx.tween_duration,
                                 tween_from: cx.tween_from,
                                 tween_to: cx.tween_to,
                                 tween_fraction: cx.tween_fraction,
+                                key_is_start: cx.key_is_start,
+                                key_is_end: cx.key_is_end,
                                 key_duration: cx.key_duration,
                                 key_from: cx.key_from,
                                 key_to: cx.key_to,
@@ -409,21 +434,14 @@ impl MinimalTweenFnAt {
                         }
                     }
 
-                    let is_start_end = (cx.plays_in_reverse && cx.key_from == Duration::ZERO)
-                        || (!cx.plays_in_reverse && cx.key_to == cx.key_duration);
-
-                    if is_start_end {
+                    if cx.key_is_start || cx.key_is_end {
                         time = Duration::ZERO;
                     }
                 })
             }
 
             Self::Duration(duration) => Box::new(move |cx| {
-                let started = cx.key_from == Duration::ZERO;
-
-                if (started && duration == Duration::ZERO)
-                    || (duration > cx.key_from && duration <= cx.key_to)
-                {
+                if cx.has_advanced() && (duration >= cx.key_from && duration <= cx.key_to) {
                     tween_fn(cx);
                 }
             }),

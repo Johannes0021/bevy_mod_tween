@@ -130,11 +130,16 @@ where
             targets,
             target_options,
             plays_in_reverse,
+            tween_is_start,
+            tween_is_end,
             tween_target,
+            tween_cycles,
             tween_duration,
             tween_from_with_dir,
             tween_to_with_dir,
             tween_fraction,
+            key_is_start_with_dir,
+            key_is_end_with_dir,
             key_from: raw_key_from,
             key_to: raw_key_to,
             previous_key,
@@ -158,7 +163,7 @@ where
         let mut target = target_entity.and_then(|e| targets.get_mut(e).ok());
 
         let key_fraction = {
-            let fraction = if key_to == self.duration {
+            let linear_key_fraction = if key_to == self.duration {
                 1.0
             } else if key_to.is_zero() {
                 0.0
@@ -166,18 +171,19 @@ where
                 key_to.as_secs_f32() / self.duration.as_secs_f32()
             };
 
-            if plays_in_reverse {
-                1.0 - fraction
+            let linear_key_fraction_with_dir = if plays_in_reverse {
+                1.0 - linear_key_fraction
             } else {
-                fraction
-            }
+                linear_key_fraction
+            };
+
+            self.ease_fn.sample_clamped(linear_key_fraction_with_dir)
         };
 
         if let Some(target) = &mut target {
             match (self.value.as_ref(), next_key.and_then(|k| k.value.as_ref())) {
                 (Some(value), Some(next_value)) => {
-                    let t = self.ease_fn.sample_clamped(key_fraction);
-                    set_property_fn(&mut *target, value.tween(next_value, t));
+                    set_property_fn(&mut *target, value.tween(next_value, key_fraction));
                 }
                 (Some(value), None) => {
                     set_property_fn(&mut *target, value.clone());
@@ -196,10 +202,6 @@ where
             }
         }
 
-        if tween_from_with_dir == tween_to_with_dir {
-            return;
-        }
-
         let (key_from_with_dir, key_to_with_dir) = if plays_in_reverse {
             let key_from_reversed = self.duration.saturating_sub(key_to);
             let key_to_reversed = self.duration.saturating_sub(key_from);
@@ -213,10 +215,15 @@ where
                 parent: target_options.parent,
                 target: target_entity.zip(target.as_mut()),
                 plays_in_reverse,
+                tween_is_start,
+                tween_is_end,
+                tween_cycles,
                 tween_duration,
                 tween_from: tween_from_with_dir,
                 tween_to: tween_to_with_dir,
                 tween_fraction,
+                key_is_start: key_is_start_with_dir,
+                key_is_end: key_is_end_with_dir,
                 key_duration: self.duration,
                 key_from: key_from_with_dir,
                 key_to: key_to_with_dir,
@@ -244,11 +251,16 @@ where
     pub targets: &'a mut Query<'qw, 'qs, &'qt mut T>,
     pub target_options: TweenTargetOptions,
     pub plays_in_reverse: bool,
+    pub tween_is_start: bool,
+    pub tween_is_end: bool,
     pub tween_target: TweenTarget,
+    pub tween_cycles: usize,
     pub tween_duration: Duration,
     pub tween_from_with_dir: Duration,
     pub tween_to_with_dir: Duration,
     pub tween_fraction: f32,
+    pub key_is_start_with_dir: bool,
+    pub key_is_end_with_dir: bool,
     pub key_from: Duration,
     pub key_to: Duration,
     pub previous_key: Option<&'a TweenKey<T, P, M>>,
