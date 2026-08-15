@@ -632,7 +632,7 @@ where
         }
 
         let linear_elapsed = if self.plays_forward() {
-            self.timer.elapsed()
+            timer_elapsed
         } else {
             self.timer.remaining()
         };
@@ -764,12 +764,12 @@ where
 
         let before_tick_forward = self.elapsed_as_if_forward();
 
-        if self.time_scale.abs() == 1.0 {
-            self.timer.tick(delta);
+        let scaled_delta = if self.time_scale.abs() == 1.0 {
+            delta
         } else {
-            let scaled_delta = delta.mul_f64(self.time_scale.abs());
-            self.timer.tick(scaled_delta);
-        }
+            delta.mul_f64(self.time_scale.abs())
+        };
+        self.timer.tick(scaled_delta);
         let times_finished_this_tick: u32 = self.timer.times_finished_this_tick();
 
         if times_finished_this_tick == 0 && self.timer.is_finished() {
@@ -777,7 +777,10 @@ where
             return;
         }
 
+        let timer_elapsed = self.timer.elapsed();
+
         if times_finished_this_tick > 0 {
+            self.timer.set_elapsed(self.duration());
             self.seek_from_to(
                 before_tick_forward,
                 self.duration(),
@@ -793,6 +796,7 @@ where
         }
 
         for _ in 0..times_finished_this_tick.saturating_sub(1) {
+            self.timer.set_elapsed(self.duration());
             self.seek_from_to(
                 Duration::ZERO,
                 self.duration(),
@@ -805,6 +809,10 @@ where
                 self.last_update_elapsed_forward = self.elapsed_as_if_forward();
                 return;
             }
+        }
+
+        if self.timer.elapsed() != timer_elapsed {
+            self.timer.set_elapsed(timer_elapsed);
         }
 
         let after_tick_forward = self.elapsed_as_if_forward();
@@ -1007,11 +1015,12 @@ where
     }
 
     fn handle_cycle_pause(&mut self, entity: Entity, commands: &mut Commands) -> bool {
+        debug_assert_eq!(self.timer.elapsed(), self.duration());
+
         let pause = self.pause_every_nth_cycle != 0
             && self.cycles.is_multiple_of(self.pause_every_nth_cycle);
 
         if pause {
-            self.timer.set_elapsed(Duration::ZERO);
             self.pause();
             commands.trigger(TweenAutoPaused::<Self> {
                 entity,
