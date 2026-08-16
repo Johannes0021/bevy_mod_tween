@@ -23,7 +23,7 @@ fn setup(mut commands: Commands) {
         //
         // target: Transform, property: Vec2, marker: TweenUpdate<()>,
         // There are also wrappers that implement Tweenable like:
-        // TweenFractionFloor, TweenFractionRound, TweenFractionCeil, TweenStep, TweenStepAt
+        // TweenableFloor, TweenableRound, TweenableCeil, TweenStep, TweenStepAt
         Tween::<Transform, Vec2, TweenUpdate>::with_set(|t, p| t.translation = p.extend(0.0))
             .extend([
                 TweenKey::new(Vec2::splat(-120.0))

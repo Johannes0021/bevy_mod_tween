@@ -80,115 +80,115 @@ impl Tweenable for DVec4 {
     }
 }
 
-impl Tweenable for TweenFractionFloor<i8> {
+impl Tweenable for TweenableFloor<i8> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).floor() as i8).into()
     }
 }
 
-impl Tweenable for TweenFractionRound<i8> {
+impl Tweenable for TweenableRound<i8> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).round() as i8).into()
     }
 }
 
-impl Tweenable for TweenFractionCeil<i8> {
+impl Tweenable for TweenableCeil<i8> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).ceil() as i8).into()
     }
 }
 
-impl Tweenable for TweenFractionFloor<i16> {
+impl Tweenable for TweenableFloor<i16> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).floor() as i16).into()
     }
 }
 
-impl Tweenable for TweenFractionRound<i16> {
+impl Tweenable for TweenableRound<i16> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).round() as i16).into()
     }
 }
 
-impl Tweenable for TweenFractionCeil<i16> {
+impl Tweenable for TweenableCeil<i16> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).ceil() as i16).into()
     }
 }
 
-impl Tweenable for TweenFractionFloor<i32> {
+impl Tweenable for TweenableFloor<i32> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).floor() as i32).into()
     }
 }
 
-impl Tweenable for TweenFractionRound<i32> {
+impl Tweenable for TweenableRound<i32> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).round() as i32).into()
     }
 }
 
-impl Tweenable for TweenFractionCeil<i32> {
+impl Tweenable for TweenableCeil<i32> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).ceil() as i32).into()
     }
 }
 
-impl Tweenable for TweenFractionFloor<u8> {
+impl Tweenable for TweenableFloor<u8> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).floor() as u8).into()
     }
 }
 
-impl Tweenable for TweenFractionRound<u8> {
+impl Tweenable for TweenableRound<u8> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).round() as u8).into()
     }
 }
 
-impl Tweenable for TweenFractionCeil<u8> {
+impl Tweenable for TweenableCeil<u8> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).ceil() as u8).into()
     }
 }
 
-impl Tweenable for TweenFractionFloor<u16> {
+impl Tweenable for TweenableFloor<u16> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).floor() as u16).into()
     }
 }
 
-impl Tweenable for TweenFractionRound<u16> {
+impl Tweenable for TweenableRound<u16> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).round() as u16).into()
     }
 }
 
-impl Tweenable for TweenFractionCeil<u16> {
+impl Tweenable for TweenableCeil<u16> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).ceil() as u16).into()
     }
 }
 
-impl Tweenable for TweenFractionFloor<u32> {
+impl Tweenable for TweenableFloor<u32> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).floor() as u32).into()
     }
 }
 
-impl Tweenable for TweenFractionRound<u32> {
+impl Tweenable for TweenableRound<u32> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).round() as u32).into()
     }
 }
 
-impl Tweenable for TweenFractionCeil<u32> {
+impl Tweenable for TweenableCeil<u32> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (((self.0 as f64).lerp(other.0 as f64, t)).ceil() as u32).into()
     }
 }
 
-impl Tweenable for TweenFractionFloor<IVec2> {
+impl Tweenable for TweenableFloor<IVec2> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (self.0.as_dvec2().lerp(other.0.as_dvec2(), t))
             .floor()
@@ -197,7 +197,7 @@ impl Tweenable for TweenFractionFloor<IVec2> {
     }
 }
 
-impl Tweenable for TweenFractionRound<IVec2> {
+impl Tweenable for TweenableRound<IVec2> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (self.0.as_dvec2().lerp(other.0.as_dvec2(), t))
             .round()
@@ -206,7 +206,7 @@ impl Tweenable for TweenFractionRound<IVec2> {
     }
 }
 
-impl Tweenable for TweenFractionCeil<IVec2> {
+impl Tweenable for TweenableCeil<IVec2> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (self.0.as_dvec2().lerp(other.0.as_dvec2(), t))
             .ceil()
@@ -215,7 +215,7 @@ impl Tweenable for TweenFractionCeil<IVec2> {
     }
 }
 
-impl Tweenable for TweenFractionFloor<IVec3> {
+impl Tweenable for TweenableFloor<IVec3> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (self.0.as_dvec3().lerp(other.0.as_dvec3(), t))
             .floor()
@@ -224,7 +224,7 @@ impl Tweenable for TweenFractionFloor<IVec3> {
     }
 }
 
-impl Tweenable for TweenFractionRound<IVec3> {
+impl Tweenable for TweenableRound<IVec3> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (self.0.as_dvec3().lerp(other.0.as_dvec3(), t))
             .round()
@@ -233,7 +233,7 @@ impl Tweenable for TweenFractionRound<IVec3> {
     }
 }
 
-impl Tweenable for TweenFractionCeil<IVec3> {
+impl Tweenable for TweenableCeil<IVec3> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (self.0.as_dvec3().lerp(other.0.as_dvec3(), t))
             .ceil()
@@ -242,7 +242,7 @@ impl Tweenable for TweenFractionCeil<IVec3> {
     }
 }
 
-impl Tweenable for TweenFractionFloor<IVec4> {
+impl Tweenable for TweenableFloor<IVec4> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (self.0.as_dvec4().lerp(other.0.as_dvec4(), t))
             .floor()
@@ -251,7 +251,7 @@ impl Tweenable for TweenFractionFloor<IVec4> {
     }
 }
 
-impl Tweenable for TweenFractionRound<IVec4> {
+impl Tweenable for TweenableRound<IVec4> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (self.0.as_dvec4().lerp(other.0.as_dvec4(), t))
             .round()
@@ -260,7 +260,7 @@ impl Tweenable for TweenFractionRound<IVec4> {
     }
 }
 
-impl Tweenable for TweenFractionCeil<IVec4> {
+impl Tweenable for TweenableCeil<IVec4> {
     fn tween(&self, other: &Self, t: f64) -> Self {
         (self.0.as_dvec4().lerp(other.0.as_dvec4(), t))
             .ceil()
@@ -319,39 +319,39 @@ where
 }
 
 //==================================================================================================
-// TweenFractionFloor
+// TweenableFloor
 //==================================================================================================
 
 #[derive(Clone, Deref, DerefMut)]
-pub struct TweenFractionFloor<T>(pub T);
+pub struct TweenableFloor<T>(pub T);
 
-impl<T> From<T> for TweenFractionFloor<T> {
+impl<T> From<T> for TweenableFloor<T> {
     fn from(value: T) -> Self {
         Self(value)
     }
 }
 
 //==================================================================================================
-// TweenFractionRound
+// TweenableRound
 //==================================================================================================
 
 #[derive(Clone, Deref, DerefMut)]
-pub struct TweenFractionRound<T>(pub T);
+pub struct TweenableRound<T>(pub T);
 
-impl<T> From<T> for TweenFractionRound<T> {
+impl<T> From<T> for TweenableRound<T> {
     fn from(value: T) -> Self {
         Self(value)
     }
 }
 
 //==================================================================================================
-// TweenFractionCeil
+// TweenableCeil
 //==================================================================================================
 
 #[derive(Clone, Deref, DerefMut)]
-pub struct TweenFractionCeil<T>(pub T);
+pub struct TweenableCeil<T>(pub T);
 
-impl<T> From<T> for TweenFractionCeil<T> {
+impl<T> From<T> for TweenableCeil<T> {
     fn from(value: T) -> Self {
         Self(value)
     }

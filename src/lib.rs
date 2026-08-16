@@ -41,8 +41,7 @@ pub mod prelude {
         property::TweenPropertySet,
         target::{TweenKeyTarget, TweenTarget},
         tweenable::{
-            TweenFractionCeil, TweenFractionFloor, TweenFractionRound, TweenStep, TweenStepAt,
-            Tweenable,
+            TweenStep, TweenStepAt, Tweenable, TweenableCeil, TweenableFloor, TweenableRound,
         },
     };
 }
