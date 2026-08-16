@@ -203,8 +203,8 @@ impl TweenController {
     pub(super) fn apply_to<T, P, M>(&mut self, tween: &mut Tween<T, P, M>)
     where
         T: Component<Mutability = Mutable>,
-        P: Tweenable + Send + Sync + 'static,
-        M: TweenMarker + Send + Sync + 'static,
+        P: Tweenable,
+        M: TweenMarker,
     {
         for action in self.read(&mut tween.controller_cursor) {
             match &action.0 {

@@ -22,8 +22,8 @@ use std::{marker::PhantomData, time::Duration};
 pub struct TweenKey<T, P, M>
 where
     T: Component<Mutability = Mutable>,
-    P: Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    P: Tweenable,
+    M: TweenMarker,
 {
     pub value: Option<P>,
     pub duration: Duration,
@@ -35,8 +35,8 @@ where
 impl<T, P, M> Default for TweenKey<T, P, M>
 where
     T: Component<Mutability = Mutable>,
-    P: Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    P: Tweenable,
+    M: TweenMarker,
 {
     fn default() -> Self {
         Self {
@@ -52,8 +52,8 @@ where
 impl<T, P, M> TweenKey<T, P, M>
 where
     T: Component<Mutability = Mutable>,
-    P: Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    P: Tweenable,
+    M: TweenMarker,
 {
     pub fn new(value: P) -> Self {
         Self::default().value(value)
@@ -145,6 +145,7 @@ where
             previous_key,
             next_key,
             commands,
+            marker,
         }: TweenKeyUpdateArgs<T, P, M>,
     ) {
         debug_assert!(raw_key_to >= raw_key_from);
@@ -229,8 +230,8 @@ where
                 key_to: key_to_with_dir,
                 key_fraction,
                 commands,
+                marker,
                 _marker_p: PhantomData,
-                _marker_m: PhantomData,
             });
         };
         if plays_in_reverse {
@@ -244,8 +245,8 @@ where
 pub(super) struct TweenKeyUpdateArgs<'a, 'cw, 'cs, 'qw, 'qs, 'qt, T, P, M>
 where
     T: Component<Mutability = Mutable>,
-    P: Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    P: Tweenable,
+    M: TweenMarker,
 {
     pub set_property_fn: TweenPropertySet<T, P>,
     pub targets: &'a mut Query<'qw, 'qs, &'qt mut T>,
@@ -266,4 +267,5 @@ where
     pub previous_key: Option<&'a TweenKey<T, P, M>>,
     pub next_key: Option<&'a TweenKey<T, P, M>>,
     pub commands: &'a mut Commands<'cw, 'cs>,
+    pub marker: &'a mut M,
 }

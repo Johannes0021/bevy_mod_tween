@@ -14,8 +14,8 @@ use std::{cmp::Ordering, marker::PhantomData, num::NonZeroUsize, time::Duration}
 pub struct TweenContext<'a, 'cw, 'cs, 'tw, T, P, M>
 where
     T: Component<Mutability = Mutable>,
-    P: Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    P: Tweenable,
+    M: TweenMarker,
 {
     pub entity: Entity,
     pub parent: Option<Entity>,
@@ -29,15 +29,15 @@ where
     pub to: Duration,
     pub fraction: f32,
     pub commands: &'a mut Commands<'cw, 'cs>,
+    pub marker: &'a mut M,
     pub(super) _marker_p: PhantomData<P>,
-    pub(super) _marker_m: PhantomData<M>,
 }
 
 impl<'a, 'cw, 'cs, 'tw, T, P, M> TweenContext<'a, 'cw, 'cs, 'tw, T, P, M>
 where
     T: Component<Mutability = Mutable>,
-    P: Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    P: Tweenable,
+    M: TweenMarker,
 {
     pub fn delta(&self) -> Duration {
         self.to.saturating_sub(self.from)
@@ -65,8 +65,8 @@ pub type TweenFn<T, P, M> = Box<dyn FnMut(TweenContext<'_, '_, '_, '_, T, P, M>)
 pub struct TweenKeyContext<'a, 'cw, 'cs, 'tw, T, P, M>
 where
     T: Component<Mutability = Mutable>,
-    P: Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    P: Tweenable,
+    M: TweenMarker,
 {
     pub entity: Entity,
     pub parent: Option<Entity>,
@@ -86,15 +86,15 @@ where
     pub key_to: Duration,
     pub key_fraction: f32,
     pub commands: &'a mut Commands<'cw, 'cs>,
+    pub marker: &'a mut M,
     pub(super) _marker_p: PhantomData<P>,
-    pub(super) _marker_m: PhantomData<M>,
 }
 
 impl<'a, 'cw, 'cs, 'tw, T, P, M> TweenKeyContext<'a, 'cw, 'cs, 'tw, T, P, M>
 where
     T: Component<Mutability = Mutable>,
-    P: Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    P: Tweenable,
+    M: TweenMarker,
 {
     pub fn tween_delta(&self) -> Duration {
         self.tween_to.saturating_sub(self.tween_from)
@@ -242,8 +242,8 @@ impl MinimalTweenFnAt {
     pub fn finalize_impl<T, P, M, F>(self, mut tween_fn: F) -> TweenFn<T, P, M>
     where
         T: Component<Mutability = Mutable>,
-        P: Tweenable + Send + Sync + 'static,
-        M: TweenMarker + Send + Sync + 'static,
+        P: Tweenable,
+        M: TweenMarker,
         F: FnMut(TweenContext<'_, '_, '_, '_, T, P, M>) + Send + Sync + 'static,
     {
         match self {
@@ -299,8 +299,8 @@ impl MinimalTweenFnAt {
                                 to: cx.to,
                                 fraction: cx.fraction,
                                 commands: cx.commands,
+                                marker: cx.marker,
                                 _marker_p: cx._marker_p,
-                                _marker_m: cx._marker_m,
                             });
                             cx.target = Some((e, target));
                         } else {
@@ -317,8 +317,8 @@ impl MinimalTweenFnAt {
                                 to: cx.to,
                                 fraction: cx.fraction,
                                 commands: cx.commands,
+                                marker: cx.marker,
                                 _marker_p: cx._marker_p,
-                                _marker_m: cx._marker_m,
                             });
                         }
                     }
@@ -340,8 +340,8 @@ impl MinimalTweenFnAt {
     pub fn finalize_key_impl<T, P, M, F>(self, mut tween_fn: F) -> TweenKeyFn<T, P, M>
     where
         T: Component<Mutability = Mutable>,
-        P: Tweenable + Send + Sync + 'static,
-        M: TweenMarker + Send + Sync + 'static,
+        P: Tweenable,
+        M: TweenMarker,
         F: FnMut(TweenKeyContext<'_, '_, '_, '_, T, P, M>) + Send + Sync + 'static,
     {
         match self {
@@ -404,8 +404,8 @@ impl MinimalTweenFnAt {
                                 key_to: cx.key_to,
                                 key_fraction: cx.key_fraction,
                                 commands: cx.commands,
+                                marker: cx.marker,
                                 _marker_p: cx._marker_p,
-                                _marker_m: cx._marker_m,
                             });
                             cx.target = Some((e, target));
                         } else {
@@ -428,8 +428,8 @@ impl MinimalTweenFnAt {
                                 key_to: cx.key_to,
                                 key_fraction: cx.key_fraction,
                                 commands: cx.commands,
+                                marker: cx.marker,
                                 _marker_p: cx._marker_p,
-                                _marker_m: cx._marker_m,
                             });
                         }
                     }

@@ -5,7 +5,7 @@ use bevy_math::{DVec2, DVec3, DVec4, FloatExt, IVec2, IVec3, IVec4, Rect, Vec2, 
 use bevy_transform::components::Transform;
 use bevy_ui::Val;
 
-pub trait Tweenable: Send + Sync + Clone {
+pub trait Tweenable: Send + Sync + Clone + 'static {
     fn tween(&self, other: &Self, t: f32) -> Self;
 }
 
@@ -212,7 +212,7 @@ where
 
 impl<T> Tweenable for TweenStep<T>
 where
-    T: Send + Sync + Clone,
+    T: Send + Sync + Clone + 'static,
 {
     fn tween(&self, other: &Self, t: f32) -> Self {
         if t < 0.5 { self.clone() } else { other.clone() }
@@ -232,7 +232,7 @@ pub struct TweenStepAt<T> {
 
 impl<T> Tweenable for TweenStepAt<T>
 where
-    T: Send + Sync + Clone,
+    T: Send + Sync + Clone + 'static,
 {
     fn tween(&self, other: &Self, t: f32) -> Self {
         if t < self.at {

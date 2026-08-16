@@ -8,6 +8,7 @@ fn main() {
         .run();
 }
 
+#[derive(Default)]
 struct SpriteColorG;
 
 fn setup(mut commands: Commands) {

@@ -141,8 +141,8 @@ fn update_tweens<T, P, M>(
     mut commands: Commands,
 ) where
     T: Component<Mutability = Mutable>,
-    P: Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    P: Tweenable,
+    M: TweenMarker,
 {
     let delta = time.delta();
     for (entity, mut tween, maybe_child_of, mut maybe_tween_controller) in tweens {
@@ -174,8 +174,8 @@ fn fixed_update_tweens<T, P, M>(
     mut commands: Commands,
 ) where
     T: Component<Mutability = Mutable>,
-    P: Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    P: Tweenable,
+    M: TweenMarker,
 {
     let delta = time.delta();
     for (entity, mut tween, maybe_child_of, mut maybe_tween_controller) in tweens {
@@ -206,8 +206,8 @@ fn init_added_tweens<T, P, M>(
     mut commands: Commands,
 ) where
     T: Component<Mutability = Mutable>,
-    P: Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    P: Tweenable,
+    M: TweenMarker,
 {
     let delta = Duration::ZERO;
     for (entity, mut tween, maybe_child_of, mut maybe_tween_controller) in tweens {
@@ -237,8 +237,8 @@ fn update_tween<T, P, M>(
     commands: &mut Commands,
 ) where
     T: Component<Mutability = Mutable>,
-    P: Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    P: Tweenable,
+    M: TweenMarker,
 {
     if let Some(tween_controller) = maybe_tween_controller {
         tween_controller.apply_to(tween);
@@ -317,8 +317,8 @@ impl<T> Clone for TweenAutoPaused<T> {
 pub struct Tween<T, P, M>
 where
     T: Component<Mutability = Mutable>,
-    P: Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    P: Tweenable,
+    M: TweenMarker,
 {
     pub(crate) controller_cursor: TweenControllerCursor,
     pub set_property_fn: TweenPropertySet<T, P>,
@@ -336,13 +336,14 @@ where
     pub target: TweenTarget,
     pub ease: TweenEase,
     pub ping_pong: bool,
+    pub marker: M,
 }
 
 fn tween_on_add<T, P, M>(mut world: DeferredWorld<'_>, _cx: HookContext)
 where
     T: Component<Mutability = Mutable>,
-    P: Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    P: Tweenable,
+    M: TweenMarker,
 {
     let type_id = TypeId::of::<Tween<T, P, M>>();
     let mut registry = world.resource_mut::<TweenRegistry>();
@@ -381,8 +382,8 @@ where
 fn tween_on_remove<T, P, M>(mut world: DeferredWorld<'_>, cx: HookContext)
 where
     T: Component<Mutability = Mutable>,
-    P: Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    P: Tweenable,
+    M: TweenMarker,
 {
     if world.entity(cx.entity).contains::<InitTween<T, P, M>>() {
         world
@@ -394,8 +395,8 @@ where
 
 impl<T, M> Default for Tween<T, T, M>
 where
-    T: Component<Mutability = Mutable> + Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    T: Component<Mutability = Mutable> + Tweenable,
+    M: TweenMarker,
 {
     fn default() -> Self {
         Self::with_set(|t, v| *t = v)
@@ -404,8 +405,8 @@ where
 
 impl<T, M> Tween<T, T, M>
 where
-    T: Component<Mutability = Mutable> + Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    T: Component<Mutability = Mutable> + Tweenable,
+    M: TweenMarker,
 {
     pub fn new() -> Self {
         Self::default()
@@ -415,8 +416,8 @@ where
 impl<T, P, M> Tween<T, P, M>
 where
     T: Component<Mutability = Mutable>,
-    P: Tweenable + Send + Sync + 'static,
-    M: TweenMarker + Send + Sync + 'static,
+    P: Tweenable,
+    M: TweenMarker,
 {
     pub fn with_set(set_property_fn: TweenPropertySet<T, P>) -> Self {
         Self {
@@ -435,6 +436,7 @@ where
             target: TweenTarget::This,
             ease: TweenEase::default(),
             ping_pong: false,
+            marker: M::default(),
         }
     }
 
@@ -554,6 +556,11 @@ where
 
     pub fn ping_pong(mut self) -> Self {
         self.ping_pong = true;
+        self
+    }
+
+    pub fn marker(mut self, marker: M) -> Self {
+        self.marker = marker;
         self
     }
 
@@ -1003,6 +1010,7 @@ where
                 previous_key,
                 next_key,
                 commands,
+                marker: &mut self.marker,
             });
 
             if key_is_end {
@@ -1039,8 +1047,8 @@ where
                 to: to_with_dir,
                 fraction: tween_fraction,
                 commands,
+                marker: &mut self.marker,
                 _marker_p: PhantomData,
-                _marker_m: PhantomData,
             });
         };
         if plays_in_reverse {
