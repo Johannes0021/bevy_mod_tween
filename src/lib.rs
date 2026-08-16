@@ -40,7 +40,10 @@ pub mod prelude {
         marker::{TweenFixedUpdate, TweenMarker, TweenSchedule, TweenUpdate},
         property::TweenPropertySet,
         target::{TweenKeyTarget, TweenTarget},
-        tweenable::{TweenStep, TweenStepAt, Tweenable},
+        tweenable::{
+            TweenFractionCeil, TweenFractionFloor, TweenFractionRound, TweenStep, TweenStepAt,
+            Tweenable,
+        },
     };
 }
 
