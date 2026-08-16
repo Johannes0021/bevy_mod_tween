@@ -835,17 +835,18 @@ where
                 target_options,
                 commands,
             );
-        } else {
-            self.time_scale = -self.time_scale;
-            self.seek_from_to(
-                after_tick_forward,
-                before_tick_forward,
-                targets,
-                target_options,
-                commands,
-            );
-            self.time_scale = -self.time_scale;
         }
+        //} else {
+        //    self.time_scale = -self.time_scale;
+        //    self.seek_from_to(
+        //        after_tick_forward,
+        //        before_tick_forward,
+        //        targets,
+        //        target_options,
+        //        commands,
+        //    );
+        //    self.time_scale = -self.time_scale;
+        //}
 
         self.last_update_elapsed_forward = after_tick_forward;
     }
