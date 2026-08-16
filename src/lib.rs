@@ -649,8 +649,7 @@ where
         let elapsed = if self.ease.is(EaseFunction::Linear, linear_elapsed) {
             linear_elapsed
         } else {
-            let fraction: f32 = self.fraction();
-            checked_duration_from_secs_f64(self.duration_secs() * fraction as f64)
+            checked_duration_from_secs_f64(self.duration_secs() * self.fraction())
         };
 
         elapsed.min(self.duration())
@@ -698,7 +697,7 @@ where
         self.timer.is_paused()
     }
 
-    pub fn fraction(&self) -> f32 {
+    pub fn fraction(&self) -> f64 {
         let plays_forward = self.plays_forward();
         let total_duration = self.duration();
         let timer_elapsed = self.timer.elapsed();
@@ -723,7 +722,7 @@ where
         })
     }
 
-    pub fn fraction_remaining(&self) -> f32 {
+    pub fn fraction_remaining(&self) -> f64 {
         1.0 - self.fraction()
     }
 

@@ -51,7 +51,7 @@ impl TweenEase {
             linear_elapsed,
             total_duration,
         }: TweenEaseSample,
-    ) -> f32 {
+    ) -> f64 {
         if linear_elapsed.is_zero() {
             return 0.0;
         }
@@ -65,7 +65,7 @@ impl TweenEase {
         match self {
             Self::Single(ease) => {
                 let t = linear_elapsed.as_secs_f64() / total_duration.as_secs_f64();
-                ease.sample_clamped(t as f32)
+                ease.sample_clamped(t as f32) as f64
             }
 
             Self::Timeline(keys) => {
@@ -81,19 +81,20 @@ impl TweenEase {
                         let segment_t = linear_elapsed.saturating_sub(segment_start).as_secs_f64()
                             / key.duration.as_secs_f64();
 
-                        let eased_t = key.ease_fn.sample_clamped(segment_t.clamp(0.0, 1.0) as f32);
+                        let eased_t: f32 =
+                            key.ease_fn.sample_clamped(segment_t.clamp(0.0, 1.0) as f32);
 
                         let start = segment_start.as_secs_f64() / total_duration.as_secs_f64();
 
                         let end = segment_end.as_secs_f64() / total_duration.as_secs_f64();
 
-                        return (start + ((end - start) * eased_t as f64)) as f32;
+                        return start + ((end - start) * eased_t as f64);
                     }
 
                     elapsed = segment_end;
                 }
 
-                (linear_elapsed.as_secs_f64() / total_duration.as_secs_f64()) as f32
+                linear_elapsed.as_secs_f64() / total_duration.as_secs_f64()
             }
         }
     }

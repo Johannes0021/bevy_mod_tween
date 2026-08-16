@@ -169,7 +169,7 @@ where
             } else if key_to.is_zero() {
                 0.0
             } else {
-                key_to.as_secs_f32() / self.duration.as_secs_f32()
+                key_to.as_secs_f64() / self.duration.as_secs_f64()
             };
 
             let linear_key_fraction_with_dir = if plays_in_reverse {
@@ -178,7 +178,8 @@ where
                 linear_key_fraction
             };
 
-            self.ease_fn.sample_clamped(linear_key_fraction_with_dir)
+            self.ease_fn
+                .sample_clamped(linear_key_fraction_with_dir as f32) as f64
         };
 
         if let Some(target) = &mut target {
@@ -259,7 +260,7 @@ where
     pub tween_duration: Duration,
     pub tween_from_with_dir: Duration,
     pub tween_to_with_dir: Duration,
-    pub tween_fraction: f32,
+    pub tween_fraction: f64,
     pub key_is_start_with_dir: bool,
     pub key_is_end_with_dir: bool,
     pub key_from: Duration,
