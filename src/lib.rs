@@ -765,7 +765,7 @@ where
         }
 
         // Update
-        if self.is_paused() {
+        if self.is_paused() || self.duration().is_zero() {
             self.last_update_elapsed_forward = self.elapsed_as_if_forward();
             return;
         }
