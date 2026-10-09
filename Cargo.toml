@@ -4,19 +4,20 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy_app = "0.19.1"
-bevy_asset = "0.19.1"
-bevy_color = "0.19.1"
-bevy_derive = "0.19.1"
-bevy_ecs = "0.19.1"
-bevy_log = "0.19.1"
-bevy_math = "0.19.1"
-bevy_time = "0.19.1"
-bevy_transform = "0.19.1"
-bevy_ui = "0.19.1"
+bevy_app = "0.20.0"
+bevy_asset = "0.20.0"
+bevy_color = "0.20.0"
+bevy_curve = "0.20.0"
+bevy_derive = "0.20.0"
+bevy_ecs = "0.20.0"
+bevy_log = "0.20.0"
+bevy_math = "0.20.0"
+bevy_time = "0.20.0"
+bevy_transform = "0.20.0"
+bevy_ui = "0.20.0"
 
 [dev-dependencies]
-bevy = "0.19.1"
+bevy = "0.20.0"
 
 [[example]]
 name = "hello_world"

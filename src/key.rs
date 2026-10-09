@@ -6,13 +6,13 @@ use super::{
     target::{TweenKeyTarget, TweenTarget, TweenTargetOptions},
     tweenable::Tweenable,
 };
+use bevy_curve::{Curve, EaseFunction};
 use bevy_ecs::{
     component::{Component, Mutable},
     event::Event,
     message::Message,
     system::{Commands, Query},
 };
-use bevy_math::curve::{Curve, EaseFunction};
 use std::{marker::PhantomData, time::Duration};
 
 //==================================================================================================
@@ -26,8 +26,8 @@ where
     M: TweenMarker,
 {
     pub value: Option<P>,
-    pub duration: Duration,
     tween_fns: Vec<(TweenFnAt, TweenKeyFn<T, P, M>)>,
+    pub duration: Duration,
     pub target: TweenKeyTarget,
     pub ease_fn: EaseFunction,
 }
@@ -41,8 +41,8 @@ where
     fn default() -> Self {
         Self {
             value: None,
-            duration: Duration::ZERO,
             tween_fns: Vec::default(),
+            duration: Duration::ZERO,
             target: TweenKeyTarget::Derive,
             ease_fn: EaseFunction::Linear,
         }
@@ -125,28 +125,28 @@ where
 
     pub(super) fn update_from_to(
         &mut self,
-        TweenKeyUpdateArgs {
-            set_property_fn,
-            targets,
+        TweenKeyUpdateParams {
             target_options,
-            plays_in_reverse,
-            tween_is_start,
-            tween_is_end,
             tween_target,
-            tween_cycles,
             tween_duration,
             tween_from_with_dir,
             tween_to_with_dir,
-            tween_fraction,
-            key_is_start_with_dir,
-            key_is_end_with_dir,
             key_from: raw_key_from,
             key_to: raw_key_to,
+            set_property_fn,
+            targets,
+            tween_cycles,
+            tween_fraction,
             previous_key,
             next_key,
-            commands,
             marker,
-        }: TweenKeyUpdateArgs<T, P, M>,
+            commands,
+            plays_in_reverse,
+            tween_is_start,
+            tween_is_end,
+            key_is_start_with_dir,
+            key_is_end_with_dir,
+        }: TweenKeyUpdateParams<T, P, M>,
     ) {
         debug_assert!(raw_key_to >= raw_key_from);
 
@@ -213,25 +213,25 @@ where
         };
         let mut tick_tween_fn = |(_, tween_fn): &mut (TweenFnAt, TweenKeyFn<T, P, M>)| {
             tween_fn(TweenKeyContext {
-                entity: target_options.this,
-                parent: target_options.parent,
                 target: target_entity.zip(target.as_mut()),
-                plays_in_reverse,
-                tween_is_start,
-                tween_is_end,
-                tween_cycles,
                 tween_duration,
                 tween_from: tween_from_with_dir,
                 tween_to: tween_to_with_dir,
-                tween_fraction,
-                key_is_start: key_is_start_with_dir,
-                key_is_end: key_is_end_with_dir,
                 key_duration: self.duration,
                 key_from: key_from_with_dir,
                 key_to: key_to_with_dir,
+                entity: target_options.this,
+                parent: target_options.parent,
+                tween_cycles,
+                tween_fraction,
                 key_fraction,
-                commands,
                 marker,
+                commands,
+                plays_in_reverse,
+                tween_is_start,
+                tween_is_end,
+                key_is_start: key_is_start_with_dir,
+                key_is_end: key_is_end_with_dir,
                 _marker_p: PhantomData,
             });
         };
@@ -243,30 +243,30 @@ where
     }
 }
 
-pub(super) struct TweenKeyUpdateArgs<'a, 'cw, 'cs, 'qw, 'qs, 'qt, T, P, M>
+pub(super) struct TweenKeyUpdateParams<'a, 'cw, 'cs, 'qw, 'qs, 'qt, T, P, M>
 where
     T: Component<Mutability = Mutable>,
     P: Tweenable,
     M: TweenMarker,
 {
-    pub set_property_fn: TweenPropertySet<T, P>,
-    pub targets: &'a mut Query<'qw, 'qs, &'qt mut T>,
     pub target_options: TweenTargetOptions,
-    pub plays_in_reverse: bool,
-    pub tween_is_start: bool,
-    pub tween_is_end: bool,
     pub tween_target: TweenTarget,
-    pub tween_cycles: usize,
     pub tween_duration: Duration,
     pub tween_from_with_dir: Duration,
     pub tween_to_with_dir: Duration,
-    pub tween_fraction: f64,
-    pub key_is_start_with_dir: bool,
-    pub key_is_end_with_dir: bool,
     pub key_from: Duration,
     pub key_to: Duration,
+    pub set_property_fn: TweenPropertySet<T, P>,
+    pub targets: &'a mut Query<'qw, 'qs, &'qt mut T>,
+    pub tween_cycles: usize,
+    pub tween_fraction: f64,
     pub previous_key: Option<&'a TweenKey<T, P, M>>,
     pub next_key: Option<&'a TweenKey<T, P, M>>,
-    pub commands: &'a mut Commands<'cw, 'cs>,
     pub marker: &'a mut M,
+    pub commands: &'a mut Commands<'cw, 'cs>,
+    pub plays_in_reverse: bool,
+    pub tween_is_start: bool,
+    pub tween_is_end: bool,
+    pub key_is_start_with_dir: bool,
+    pub key_is_end_with_dir: bool,
 }

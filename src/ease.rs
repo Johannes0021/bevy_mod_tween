@@ -1,5 +1,5 @@
 use super::checked_duration_from_secs_f64;
-use bevy_math::curve::{Curve, EaseFunction};
+use bevy_curve::{Curve, EaseFunction};
 use std::time::Duration;
 
 //==================================================================================================

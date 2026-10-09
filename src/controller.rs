@@ -2,8 +2,8 @@ use super::{
     Tween, TweenEase, TweenEaseKey, checked_duration_from_secs_f64, marker::TweenMarker,
     target::TweenTarget, tweenable::Tweenable,
 };
+use bevy_curve::EaseFunction;
 use bevy_ecs::component::{Component, Mutable};
-use bevy_math::curve::EaseFunction;
 use bevy_time::TimerMode;
 use std::{mem, time::Duration};
 

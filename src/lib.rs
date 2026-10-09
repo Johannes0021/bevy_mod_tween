@@ -2,13 +2,14 @@ use crate::{
     controller::{TweenController, TweenControllerCursor},
     ease::{TweenEase, TweenEaseKey, TweenEaseSample},
     function::{MinimalTweenFnAt, TweenContext, TweenFn, TweenFnAt},
-    key::{TweenKey, TweenKeyUpdateArgs},
+    key::{TweenKey, TweenKeyUpdateParams},
     marker::{TweenMarker, TweenSchedule},
     property::TweenPropertySet,
     target::{TweenTarget, TweenTargetOptions},
     tweenable::Tweenable,
 };
 use bevy_app::{App, FixedUpdate, MainScheduleOrder, Plugin, SpawnScene, Update};
+use bevy_curve::EaseFunction;
 use bevy_ecs::{
     change_detection::{Mut, Res},
     component::{Component, Mutable},
@@ -24,7 +25,6 @@ use bevy_ecs::{
     world::{DeferredWorld, World},
 };
 use bevy_log::warn;
-use bevy_math::curve::EaseFunction;
 use bevy_time::{Fixed, Time, Timer, TimerMode};
 use std::{any::TypeId, collections::HashSet, marker::PhantomData, mem, time::Duration};
 
@@ -322,23 +322,23 @@ where
     P: Tweenable,
     M: TweenMarker,
 {
-    pub(crate) controller_cursor: TweenControllerCursor,
-    pub set_property_fn: TweenPropertySet<T, P>,
+    pub marker: M,
+    timer: Timer,
+    last_seek_from_to: Option<(Duration, Duration)>,
     keys: Vec<(Duration, TweenKey<T, P, M>)>,
     seek_from_to_unchecked: Vec<(Duration, Duration)>,
-    current: usize,
+    tween_fns: Vec<(TweenFnAt, TweenFn<T, P, M>)>,
+    pub ease: TweenEase,
     last_update_elapsed_forward: Duration,
-    last_seek_from_to: Option<(Duration, Duration)>,
-    timer: Timer,
+    pub target: TweenTarget,
+    pub(crate) controller_cursor: TweenControllerCursor,
+    pub set_property_fn: TweenPropertySet<T, P>,
+    current: usize,
     pub time_scale: f64,
     cycles: usize,
     /// `0` disables cycle pauses.
     pub pause_every_nth_cycle: usize,
-    tween_fns: Vec<(TweenFnAt, TweenFn<T, P, M>)>,
-    pub target: TweenTarget,
-    pub ease: TweenEase,
     pub ping_pong: bool,
-    pub marker: M,
 }
 
 fn tween_on_add<T, P, M>(mut world: DeferredWorld<'_>, _cx: HookContext)
@@ -423,22 +423,22 @@ where
 {
     pub fn with_set(set_property_fn: TweenPropertySet<T, P>) -> Self {
         Self {
-            controller_cursor: TweenControllerCursor::default(),
-            set_property_fn,
+            marker: M::default(),
+            timer: Timer::new(Duration::ZERO, TimerMode::Once),
+            last_seek_from_to: None,
             keys: Vec::default(),
             seek_from_to_unchecked: Vec::default(),
-            current: 0,
+            tween_fns: Vec::default(),
+            ease: TweenEase::default(),
             last_update_elapsed_forward: Duration::ZERO,
-            last_seek_from_to: None,
-            timer: Timer::new(Duration::ZERO, TimerMode::Once),
+            target: TweenTarget::This,
+            controller_cursor: TweenControllerCursor::default(),
+            set_property_fn,
+            current: 0,
             time_scale: 1.0,
             cycles: 0,
             pause_every_nth_cycle: 0,
-            tween_fns: Vec::default(),
-            target: TweenTarget::This,
-            ease: TweenEase::default(),
             ping_pong: false,
-            marker: M::default(),
         }
     }
 
@@ -991,27 +991,27 @@ where
                 (key_is_start, key_is_end)
             };
 
-            current.update_from_to(TweenKeyUpdateArgs {
-                set_property_fn,
-                targets,
+            current.update_from_to(TweenKeyUpdateParams {
                 target_options,
-                plays_in_reverse,
-                tween_is_start: is_start_with_dir,
-                tween_is_end: is_end_with_dir,
                 tween_target,
-                tween_cycles: self.cycles,
                 tween_duration: total_duration,
                 tween_from_with_dir: from_with_dir,
                 tween_to_with_dir: to_with_dir,
-                tween_fraction,
-                key_is_start_with_dir,
-                key_is_end_with_dir,
                 key_from,
                 key_to,
+                set_property_fn,
+                targets,
+                tween_cycles: self.cycles,
+                tween_fraction,
                 previous_key,
                 next_key,
-                commands,
                 marker: &mut self.marker,
+                commands,
+                plays_in_reverse,
+                tween_is_start: is_start_with_dir,
+                tween_is_end: is_end_with_dir,
+                key_is_start_with_dir,
+                key_is_end_with_dir,
             });
 
             if key_is_end {
@@ -1036,19 +1036,19 @@ where
         let mut target = target_entity.and_then(|e| targets.get_mut(e).ok());
         let mut tick_tween_fn = |(_, tween_fn): &mut (TweenFnAt, TweenFn<T, P, M>)| {
             tween_fn(TweenContext {
-                entity: target_options.this,
-                parent: target_options.parent,
                 target: target_entity.zip(target.as_mut()),
-                plays_in_reverse,
-                is_start: is_start_with_dir,
-                is_end: is_end_with_dir,
-                cycles: self.cycles,
                 duration: total_duration,
                 from: from_with_dir,
                 to: to_with_dir,
+                entity: target_options.this,
+                parent: target_options.parent,
+                cycles: self.cycles,
                 fraction: tween_fraction,
-                commands,
                 marker: &mut self.marker,
+                commands,
+                plays_in_reverse,
+                is_start: is_start_with_dir,
+                is_end: is_end_with_dir,
                 _marker_p: PhantomData,
             });
         };
